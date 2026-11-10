@@ -88,7 +88,7 @@
 本应用的官方发布版（含官网、公众号、网盘分发的 APK）对应的完整源码即本仓库：
 
 ```
-https://github.com/<用户名>/<仓库名>   <!-- TODO: 建仓后替换为真实地址 -->
+https://github.com/aak6102/little-snail-player
 ```
 
 若你拿到的安装包无法在此获取对应源码，请邮件 `support@709048.xyz`，我们会提供获取方式。

@@ -67,10 +67,10 @@ private const val UPSTREAM_URL = "https://github.com/anilbeesetti/nextplayer"
 /**
  * 本应用自己的源码仓库地址（GPL-3.0 要求提供源码获取途径）。
  *
- * **发布正式包前必须填成真实地址**；留空时「查看源码」会提示「即将公布」，
- * 这样即使忘了改，也不会把死链发到用户手里。
+ * 留空时「查看源码」会提示「即将公布」而不打开空链接 —— 换成自建仓库时若忘记改，
+ * 也不会把死链发到用户手里。
  */
-private const val SOURCE_URL = ""
+private const val SOURCE_URL = "https://github.com/aak6102/little-snail-player"
 
 @Composable
 fun AboutPreferencesScreen(viewModel: AboutPreferencesViewModel) {
