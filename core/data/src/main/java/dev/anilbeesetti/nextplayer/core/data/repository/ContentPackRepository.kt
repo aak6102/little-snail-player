@@ -50,17 +50,27 @@ class ContentPackRepository(
         /** 云端包落盘的文件名，与 assets 内同名，加载层才能无缝替换 */
         const val PACK_FILE = "five_levels.json"
 
+        /** 下载中的临时文件。任何非成功路径都不该把它留在磁盘上（见 [ContentApi.download]）。 */
+        private const val PART_FILE = "$PACK_FILE.part"
+
         private const val META_FILE = "meta.json"
     }
 
     private val appContext = context.applicationContext
     private val dir = File(appContext.filesDir, DIR)
     private val packFile = File(dir, PACK_FILE)
+    private val partFile = File(dir, PART_FILE)
     private val metaFile = File(dir, META_FILE)
     private val api = ContentApi()
 
     private val _state = MutableStateFlow(readState())
     val state: StateFlow<ContentPackState> = _state.asStateFlow()
+
+    init {
+        // 上次下载被系统杀进程打断时会留下半截 .part。它在任何路径上都没有用处：
+        // 下次下载一开始就会删掉重建，留着只是白占三百多 KB，还会让排查时误以为下载在进行。
+        runCatching { if (partFile.exists()) partFile.delete() }
+    }
 
     /** 防止 [startAutoSync] 被多次调用时挂上多个收集器 */
     private val syncStarted = java.util.concurrent.atomic.AtomicBoolean(false)
@@ -158,6 +168,9 @@ class ContentPackRepository(
         return when (result) {
             is ContentApi.Result.Err -> {
                 Logger.logError(TAG, "download failed: ${result.code} ${result.message}")
+                // 兜底再删一次：正常路径已经由 ContentApi 的 finally 清掉了，
+                // 这里防止那段逻辑将来被改坏——残留的半截文件没有任何用处。
+                runCatching { if (partFile.exists()) partFile.delete() }
                 _state.value = _state.value.copy(
                     busy = false,
                     error = if (reportErrors) result.message else "",
@@ -191,6 +204,7 @@ class ContentPackRepository(
     fun discardInstalled() {
         runCatching {
             packFile.delete()
+            partFile.delete()
             metaFile.delete()
         }
         _state.value = _state.value.copy(installedVersion = 0, availableVersion = 0)

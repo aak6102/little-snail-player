@@ -576,6 +576,26 @@ class QuizGeneratorTest {
         }
     }
 
+    /**
+     * 多义词只取首义当题干，全部义项留给答题后的反馈。
+     *
+     * 设备念不出英文时听力题会降级成「看中文选英文」，题干就是 [QuizQuestion.primaryMeaning]。
+     * 若这里填的是拼好的全义项，孩子会看到「烹饪；厨师」摆在上面，以为要选两样东西。
+     */
+    @Test
+    fun `题干只取首义，反馈仍给全部义项`() {
+        val cook = QuizWord(id = "cook", word = "cook", zh = listOf("烹饪", "厨师"), tags = listOf("food"))
+        val question = QuizGenerator.buildQuestion(
+            word = cook,
+            pool = listOf(cook) + bank.words,
+            progress = StudyProgress(),
+            random = Random(7),
+        )
+        assertNotNull(question)
+        assertEquals("烹饪", question!!.primaryMeaning)
+        assertEquals("烹饪；厨师", question.meaning)
+    }
+
     private companion object {
         /** 已掌握，用于让题型轮转不受「错题优先」干扰。 */
         const val MASTERY_STREAK_FOR_TEST = QuizGenerator.MASTERY_STREAK

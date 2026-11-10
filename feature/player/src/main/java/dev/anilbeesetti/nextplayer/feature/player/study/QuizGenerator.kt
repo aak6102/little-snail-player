@@ -236,6 +236,8 @@ object QuizGenerator {
             word = word.word,
             // 用全义项而不是首义：cook 只显示「烹饪」的话，学过「厨师」的孩子会以为答错了
             meaning = word.fullMeaning,
+            // 但题干（无朗读时的替身）只能用首义：多义项拼成一条会让人以为要选两样
+            primaryMeaning = word.primaryMeaning,
             emoji = word.emoji,
             debt = progress.wordStats[word.statKey]?.debt == true,
         )

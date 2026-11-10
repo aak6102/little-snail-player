@@ -170,6 +170,14 @@ data class QuizQuestion(
     /** 作答后展示的完整词条信息。 */
     val word: String,
     val meaning: String,
+    /**
+     * 首义，单独留一份。
+     *
+     * [meaning] 是「全部义项拼成一条」，适合作答后的反馈，不适合当题干：
+     * 设备念不出声音时听力题要降级成「看中文选英文」，此时题干必须是
+     * 单一义项——把「烹饪；厨师」摆在上面，孩子会以为要选两样东西。
+     */
+    val primaryMeaning: String = "",
     val emoji: String,
     /**
      * 是否为「欠账词」：上次没独立答对，本次必须独立答对才能销账。

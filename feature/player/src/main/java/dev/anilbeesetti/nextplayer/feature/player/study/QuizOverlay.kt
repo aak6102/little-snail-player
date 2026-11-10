@@ -93,8 +93,23 @@ fun QuizOverlay(
         onDispose { view.keepScreenOn = false }
     }
 
-    LaunchedEffect(question.statKey) {
-        if (question.type == QuizQuestionType.LISTEN_PICK_WORD) speaker.speak(question.word)
+    /*
+     * 设备念不出英文时，听力题必须换一种问法，否则这道题没有任何可作答的信息：
+     * 四个选项都是英文拼写，孩子只能瞎点，点错三次还会被记成「没掌握」。
+     *
+     * 降级成「看中文选英文」是同一批词、同一个答案，只换提问方向——
+     * 原本听力题给选项配的中文注脚此时必须撤掉，否则题干的中文和注脚一一对应，
+     * 答案等于直接写着。判定只认 NO_ENGINE / NO_ENGLISH，初始化中不动，
+     * 避免有引擎的设备闪一下再切回来；家长后装了引擎，状态变 READY 会自动切回听力题。
+     */
+    val listenFallback = question.type == QuizQuestionType.LISTEN_PICK_WORD && speaker.status.isUnavailable
+
+    LaunchedEffect(question.statKey, listenFallback) {
+        // 已经确定念不出来就别再请求朗读：QuizSpeaker 收到请求会再试一次绑定引擎，
+        // 在没有 TTS 的设备上只是白白多打几次日志
+        if (question.type == QuizQuestionType.LISTEN_PICK_WORD && !listenFallback) {
+            speaker.speak(question.word)
+        }
     }
 
     BoxWithConstraints(
@@ -127,6 +142,7 @@ fun QuizOverlay(
                         question = question,
                         gate = gate,
                         speaker = speaker,
+                        listenFallback = listenFallback,
                     )
                 } else {
                     StackedQuizLayout(
@@ -135,6 +151,7 @@ fun QuizOverlay(
                         gate = gate,
                         speaker = speaker,
                         twoColumns = twoColumns,
+                        listenFallback = listenFallback,
                     )
                 }
             }
@@ -150,6 +167,7 @@ private fun StackedQuizLayout(
     gate: QuizGate,
     speaker: QuizSpeaker,
     twoColumns: Boolean,
+    listenFallback: Boolean,
 ) {
     Column(
         modifier = Modifier
@@ -157,9 +175,20 @@ private fun StackedQuizLayout(
             .padding(horizontal = 24.dp, vertical = 16.dp),
         horizontalAlignment = Alignment.CenterHorizontally,
     ) {
-        QuizHead(state = state, question = question, gate = gate, compact = false)
+        QuizHead(
+            state = state,
+            question = question,
+            gate = gate,
+            compact = false,
+            listenFallback = listenFallback,
+        )
         Spacer(Modifier.height(18.dp))
-        QuizPrompt(question = question, speaker = speaker, compact = false)
+        QuizPrompt(
+            question = question,
+            speaker = speaker,
+            compact = false,
+            listenFallback = listenFallback,
+        )
         Spacer(Modifier.height(14.dp))
         HintText(state = state)
         Spacer(Modifier.height(10.dp))
@@ -168,6 +197,7 @@ private fun StackedQuizLayout(
             gate = gate,
             twoColumns = twoColumns,
             compact = false,
+            showCaptions = !listenFallback,
             modifier = Modifier.fillMaxWidth(),
         )
         if (state.revealed && !state.mustPickAnswer) {
@@ -184,6 +214,7 @@ private fun CompactQuizLayout(
     question: QuizQuestion,
     gate: QuizGate,
     speaker: QuizSpeaker,
+    listenFallback: Boolean,
 ) {
     Row(
         modifier = Modifier
@@ -197,9 +228,20 @@ private fun CompactQuizLayout(
                 .padding(end = 20.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
-            QuizHead(state = state, question = question, gate = gate, compact = true)
+            QuizHead(
+                state = state,
+                question = question,
+                gate = gate,
+                compact = true,
+                listenFallback = listenFallback,
+            )
             Spacer(Modifier.height(10.dp))
-            QuizPrompt(question = question, speaker = speaker, compact = true)
+            QuizPrompt(
+                question = question,
+                speaker = speaker,
+                compact = true,
+                listenFallback = listenFallback,
+            )
         }
         Column(
             modifier = Modifier.weight(1.15f),
@@ -210,6 +252,7 @@ private fun CompactQuizLayout(
                 gate = gate,
                 twoColumns = true,
                 compact = true,
+                showCaptions = !listenFallback,
                 modifier = Modifier.fillMaxWidth(),
             )
             Spacer(Modifier.height(6.dp))
@@ -228,6 +271,7 @@ private fun QuizHead(
     question: QuizQuestion,
     gate: QuizGate,
     compact: Boolean,
+    listenFallback: Boolean,
 ) {
         Text(
             text = stringResource(id = if (gate.crazyMode) R.string.quiz_title_crazy else R.string.quiz_title),
@@ -247,10 +291,13 @@ private fun QuizHead(
     Spacer(Modifier.height(4.dp))
     Text(
         text = stringResource(
-            id = when (question.type) {
-                QuizQuestionType.WORD_TO_ZH -> R.string.quiz_hint_word_to_zh
-                QuizQuestionType.LISTEN_PICK_WORD -> R.string.quiz_hint_listen
-                QuizQuestionType.EMOJI_PICK_WORD -> R.string.quiz_hint_emoji
+            id = when {
+                // 降级之后问法与「看词选义」相反（中文 → 英文），提示也要跟着换，
+                // 否则孩子按「听一听」的说明去找喇叭，屏幕上根本没有
+                listenFallback -> R.string.quiz_hint_listen_fallback
+                question.type == QuizQuestionType.WORD_TO_ZH -> R.string.quiz_hint_word_to_zh
+                question.type == QuizQuestionType.LISTEN_PICK_WORD -> R.string.quiz_hint_listen
+                else -> R.string.quiz_hint_emoji
             },
         ),
         color = Color(0xFFBDBDBD),
@@ -264,6 +311,7 @@ private fun QuizPrompt(
     question: QuizQuestion,
     speaker: QuizSpeaker,
     compact: Boolean,
+    listenFallback: Boolean,
 ) {
     when (question.type) {
         QuizQuestionType.EMOJI_PICK_WORD -> Text(
@@ -280,37 +328,56 @@ private fun QuizPrompt(
         )
 
         // 重听走慢速：第一遍用正常语速，听不清时再点就是「放慢重念」，才算真的给第二次机会
-        QuizQuestionType.LISTEN_PICK_WORD -> Column(
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
-            TextButton(onClick = { speaker.speak(question.word, slow = true) }) {
-                Icon(
-                    imageVector = NextIcons.VolumeUp,
-                    contentDescription = null,
-                    tint = Color(0xFFF5F5F5),
-                    modifier = Modifier.width(if (compact) 32.dp else 40.dp),
-                )
-                Spacer(Modifier.width(8.dp))
+        QuizQuestionType.LISTEN_PICK_WORD -> if (listenFallback) {
+            // 降级路径：这里不显示任何「听」的控件，只把中文摆出来。
+            // 留一个点了没声音的喇叭，比不给按钮更糟——孩子会以为是自己没按对。
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
                 Text(
-                    text = stringResource(id = R.string.quiz_replay),
+                    text = question.primaryMeaning.ifBlank { question.meaning },
                     color = Color(0xFFF5F5F5),
-                    fontSize = if (compact) 17.sp else 20.sp,
-                )
-            }
-            // 念不出来时必须说话：否则孩子只会以为喇叭坏了，一遍遍点到哭
-            val hint = when (speaker.status) {
-                SpeakerStatus.NO_ENGINE -> R.string.quiz_speaker_no_engine
-                SpeakerStatus.NO_ENGLISH -> R.string.quiz_speaker_no_english
-                else -> 0
-            }
-            if (hint != 0) {
-                Text(
-                    text = stringResource(id = hint),
-                    color = Color(0xFFFFB4AB),
-                    fontSize = if (compact) 12.sp else 14.sp,
+                    fontSize = if (compact) 34.sp else 42.sp,
+                    fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
-                    modifier = Modifier.padding(top = 6.dp, start = 8.dp, end = 8.dp),
                 )
+                Spacer(Modifier.height(6.dp))
+                Text(
+                    text = stringResource(id = R.string.quiz_listen_fallback_note),
+                    color = Color(0xFF9A9A9A),
+                    fontSize = if (compact) 12.sp else 13.sp,
+                    textAlign = TextAlign.Center,
+                )
+            }
+        } else {
+            Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                TextButton(onClick = { speaker.speak(question.word, slow = true) }) {
+                    Icon(
+                        imageVector = NextIcons.VolumeUp,
+                        contentDescription = null,
+                        tint = Color(0xFFF5F5F5),
+                        modifier = Modifier.width(if (compact) 32.dp else 40.dp),
+                    )
+                    Spacer(Modifier.width(8.dp))
+                    Text(
+                        text = stringResource(id = R.string.quiz_replay),
+                        color = Color(0xFFF5F5F5),
+                        fontSize = if (compact) 17.sp else 20.sp,
+                    )
+                }
+                // 念不出来时必须说话：否则孩子只会以为喇叭坏了，一遍遍点到哭
+                val hint = when (speaker.status) {
+                    SpeakerStatus.NO_ENGINE -> R.string.quiz_speaker_no_engine
+                    SpeakerStatus.NO_ENGLISH -> R.string.quiz_speaker_no_english
+                    else -> 0
+                }
+                if (hint != 0) {
+                    Text(
+                        text = stringResource(id = hint),
+                        color = Color(0xFFFFB4AB),
+                        fontSize = if (compact) 12.sp else 14.sp,
+                        textAlign = TextAlign.Center,
+                        modifier = Modifier.padding(top = 6.dp, start = 8.dp, end = 8.dp),
+                    )
+                }
             }
         }
     }
@@ -322,6 +389,8 @@ private fun QuizOptions(
     gate: QuizGate,
     twoColumns: Boolean,
     compact: Boolean,
+    /** 听力题的中文注脚是否显示；降级成「看中文选单词」时必须关掉，否则等于泄题。 */
+    showCaptions: Boolean = true,
     modifier: Modifier = Modifier,
 ) {
     val options = state.question?.options ?: return
@@ -337,7 +406,11 @@ private fun QuizOptions(
                     QuizOptionButton(
                         text = option,
                         // 听力题的选项补一行中文，让孩子能用「我听过这个词」确认，而不是瞎点
-                        caption = state.question?.optionCaptions?.get(option),
+                        caption = if (showCaptions) {
+                            state.question?.optionCaptions?.get(option)
+                        } else {
+                            null
+                        },
                         visual = state.visualFor(option),
                         enabled = state.isOptionClickable(option),
                         compact = compact,

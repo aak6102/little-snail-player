@@ -633,6 +633,8 @@
     <string name="license_buy_hint" translatable="false">试用期内也可随时解锁 · 播放器与基础快进限制永久免费</string>
     <string name="license_buy_trial_now" translatable="false">立即解锁（试用还剩 %1$d 天）</string>
     <string name="license_start_trial" translatable="false">免费试用 7 天</string>
+    <!-- 试用已在本地生效、但上报没成功：不要把家长吓回去，说明「能用」+「会自动补」 -->
+    <string name="license_trial_sync_pending" translatable="false">试用已在这台设备上开启，可以正常使用。服务器记录会在联网后自动补上。</string>
     <string name="license_start_trial_title" translatable="false">开始 7 天免费试用</string>
     <string name="license_start_trial_message" translatable="false">试用期内 Pro 全部可用：快进自定义间隔或关闭、课标词表、答题锁、学习报告、防沉迷休息。到期后只停 Pro 功能，播放器与基础快进限制（固定 2 分钟）照常使用，孩子的答题记录不会清空。</string>
     <string name="license_start_trial_ok" translatable="false">开始试用</string>
@@ -735,6 +737,9 @@
     <string name="quiz_progress" translatable="false">第 %1$d 题 / 共 %2$d 题</string>
     <string name="quiz_hint_word_to_zh" translatable="false">选出这个单词的意思</string>
     <string name="quiz_hint_listen" translatable="false">听一听，选出正确的单词</string>
+    <!-- 设备没有可用 TTS 时，听力题自动换成同一批词的「看中文选英文」 -->
+    <string name="quiz_hint_listen_fallback" translatable="false">看中文，选出对应的英文单词</string>
+    <string name="quiz_listen_fallback_note" translatable="false">这台设备念不出英文，已换成看中文选单词</string>
     <string name="quiz_hint_emoji" translatable="false">看图片，选出对应的单词</string>
     <string name="quiz_replay" translatable="false">再听一遍（慢一点）</string>
     <string name="quiz_speaker_no_engine" translatable="false">这台设备没有朗读引擎，听力题放不出声音。请在系统设置里安装「文字转语音」后重试</string>

@@ -254,7 +254,17 @@ class QuizGate(
         adaptiveView = currentAdaptive(maxLevel).afterAnswer(correct, maxLevel)
         if (!correct) sessionHadWrong = true
         if (correct) sessionCorrectCount += 1
-        recordAnswer(correct)
+        /*
+         * 记账口径比「过关」严一档：本题点错过（选项被划掉过）就不算独立答对。
+         *
+         * 早先只有「错满三次看答案后放行」才记错，于是「先点错一个、再点对」被当成
+         * 已掌握——这个词既不进错词池，下一轮也不会优先复习，排除法就成了一条
+         * 免记账的捷径。改成留账之后，它仍要等下一轮独立答对才销账。
+         *
+         * 但时长惩罚与自适应升降档不看这一档：它们衡量的是「这次是不是在乱点」。
+         * 排除法不是乱点，不该让孩子只剩 5 分钟，也不该因此被降档。
+         */
+        recordAnswer(correct = correct && _state.value.attempt == 0)
         sessionAnswered += 1
         if (sessionAnswered >= sessionTotal) {
             // 疯狂模式：答完本轮立刻续播，不当作「学习轮次」给结果页——

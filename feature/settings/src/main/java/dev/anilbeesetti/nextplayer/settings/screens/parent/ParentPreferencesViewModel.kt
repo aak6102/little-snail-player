@@ -265,7 +265,13 @@ class ParentPreferencesViewModel(
             // 结果就是「App 显示试用中、后台却没有任何试用记录」。
             withContext(NonCancellable) {
                 enableStudyModeNow()
-                licenseRepository.startTrial()
+                val synced = licenseRepository.startTrial()
+                // 试用在本地已经生效（开关此刻就是亮的），但上报没成功——必须说出来。
+                // 之前这里完全静默：家长看到开关自己亮了，不知道是成功还是点了没反应，
+                // 再点一下反而把它关掉，更容易误判成「按钮坏了」。
+                if (!synced) {
+                    stateInternal.update { it.copy(trialSyncPending = true) }
+                }
             }
         }
     }
@@ -666,6 +672,14 @@ data class ParentPreferencesUiState(
     val preWarnSeconds: Int = RestPreferences.DEFAULT_PREWARN_SECONDS,
     /** 授权状态，来自本地验签，不依赖网络。 */
     val license: LicenseStatus = LicenseStatus(),
+    /**
+     * 试用已在本地生效、但没上报成功（断网 / 超时 / 服务端抖动）。
+     *
+     * 只用来在授权区块给一句「能用，云端的记录会自动补」的说明；
+     * 不参与任何功能判定——[license] 才是唯一的真相。
+     * 不落盘：家长离开这一页就消失，下次进来 bootstrap 已经补报过了。
+     */
+    val trialSyncPending: Boolean = false,
     val deviceId: String = "",
     val contactEmail: String = "",
     val purchase: PurchaseUiState = PurchaseUiState(),

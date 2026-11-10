@@ -115,6 +115,17 @@ fun ParentLicenseSection(
             isFirstItem = true,
         )
 
+        // 试用已生效但上报失败：把「能用」和「云端会自动补」一起说清楚。
+        // 不写「失败了请重试」——重试也解决不了国际链路抖动，只会让家长反复点开关。
+        if (state.trialSyncPending) {
+            Text(
+                text = stringResource(R.string.license_trial_sync_pending),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            )
+        }
+
         ClickablePreferenceItem(
             title = stringResource(R.string.license_device_title),
             description = if (state.deviceId.isBlank()) {

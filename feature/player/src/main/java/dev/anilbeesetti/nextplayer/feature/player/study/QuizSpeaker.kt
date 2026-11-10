@@ -31,6 +31,15 @@ enum class SpeakerStatus {
 }
 
 /**
+ * 这个状态是否已经能断定「这台机器念不出来」。
+ *
+ * [SpeakerStatus.INITIALIZING] 不算：还没结论就换题型，会让有引擎的设备
+ * 在绑定完成的一瞬间闪一下「改成看中文选单词」。
+ */
+val SpeakerStatus.isUnavailable: Boolean
+    get() = this == SpeakerStatus.NO_ENGINE || this == SpeakerStatus.NO_ENGLISH
+
+/**
  * 听力题的朗读器。
  *
  * TTS 初始化是异步的，初始化完成前的朗读请求会被暂存，

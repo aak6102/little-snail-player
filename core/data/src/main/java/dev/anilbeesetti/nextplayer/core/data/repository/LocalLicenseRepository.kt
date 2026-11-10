@@ -15,6 +15,7 @@ import java.security.MessageDigest
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -61,6 +62,9 @@ class LocalLicenseRepository(
 
         /** 服务端没下发邮箱时的兜底，保证「发邮件」按钮永远可点。 */
         private const val FALLBACK_CONTACT_EMAIL = "ak6102@163.com"
+
+        /** 试用上报失败后多久补报一次（见 [scheduleTrialReplay]）。 */
+        private const val TRIAL_REPLAY_DELAY_MS = 15_000L
     }
 
     private val api = LicenseApi()
@@ -70,6 +74,9 @@ class LocalLicenseRepository(
 
     @Volatile
     private var cachedDeviceId: String = ""
+
+    /** 试用补报是否已经排过队，避免连点开关排出多次请求。 */
+    private val trialReplayScheduled = java.util.concurrent.atomic.AtomicBoolean(false)
 
     private val _contactEmail = MutableStateFlow(FALLBACK_CONTACT_EMAIL)
 
@@ -167,8 +174,29 @@ class LocalLicenseRepository(
 
             is LicenseApi.Result.Err -> {
                 Logger.logError(TAG, "startTrial failed: ${result.code} ${result.message}")
+                // 本地已经生效，但云端没有这条记录。过一会儿补一次：
+                // bootstrap 会带上本地起点自动补写，所以即使这次也失败，
+                // 下次冷启动 / 进授权页仍能补上——这里只是把「等下次冷启动」缩短到十几秒。
+                // 不立刻重试：同一条链路刚超时，紧接着再来一次大概率还是超时。
+                scheduleTrialReplay()
                 false
             }
+        }
+    }
+
+    /**
+     * 安排一次试用补报。
+     *
+     * 用一个独立的 flag 去重：家长可能连点几次开关，没必要排出五六次请求。
+     */
+    private fun scheduleTrialReplay() {
+        if (!trialReplayScheduled.compareAndSet(false, true)) return
+        scope.launch {
+            delay(TRIAL_REPLAY_DELAY_MS)
+            trialReplayScheduled.set(false)
+            runCatching {
+                if (latest.trialStartedAtMs > 0L) refresh()
+            }.onFailure { Logger.logError(TAG, "trial replay failed: $it") }
         }
     }
 
