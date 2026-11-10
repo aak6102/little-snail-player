@@ -9,10 +9,10 @@ import com.google.common.util.concurrent.ListenableFuture
 import kotlin.math.ceil
 
 /**
- * 快进节流播放器（最小改动版）。
+ * 快进节流播放器。
  *
- * 在完全保留 Next Player 原生能力的前提下，对「跳转(seek)」增加最小时间间隔限制：
- * 任意两次跳转之间必须间隔 [SEEK_INTERVAL_MS]（默认 2 分钟）。
+ * 在完全保留 Next Player 原生能力的前提下，对「跳转(seek)」增加最小时间间隔限制。
+ * 间隔与开关都由家长在家长设置页配置（[seekIntervalProvider]），运行中改设置立即生效。
  *
  * 设计要点：
  * - 仅覆写 [handleSeek]，其余所有播放能力（播放/暂停/倍速/字幕/解码器/通知栏/蓝牙控件）
@@ -22,12 +22,19 @@ import kotlin.math.ceil
  *   跨 [PlayerService] 重建、跨「退出视频再进入」均持续生效，杜绝通过退出生效重置冷却的漏洞。
  * - 冷却期内（含退出再进入同一视频、切换新视频）的跳转请求一律被丢弃（播放位置不变化，
  *   UI 进度条自动回弹），并通过 [onSeekThrottled] 回调告知用户还需等待多久。
+ * - 家长关掉节流时 [seekIntervalProvider] 返回 null，此时退回原生行为，不做任何拦截。
  */
 @UnstableApi
-class ThrottledSeekPlayer(player: Player) : ForwardingSimpleBasePlayer(player) {
-
-    /** 两次快进之间的最小间隔：2 分钟 */
-    private val seekIntervalMs = SEEK_INTERVAL_MS
+class ThrottledSeekPlayer(
+    player: Player,
+    /**
+     * 当前生效的快进冷却时长（毫秒）；返回 null 表示家长关掉了节流。
+     *
+     * 传函数而不是传值，是为了让家长在播放途中改设置能立刻生效——
+     * 若在构造时定死，改完设置得重启播放器才管用，等于把开关做成了装饰。
+     */
+    private val seekIntervalProvider: () -> Long?,
+) : ForwardingSimpleBasePlayer(player) {
 
     /**
      * 冷却期内被拦截的跳转会通过此回调通知上层（例如弹 Toast 提示剩余等待时间）。
@@ -52,17 +59,27 @@ class ThrottledSeekPlayer(player: Player) : ForwardingSimpleBasePlayer(player) {
         if (positionMs == 0L) {
             return super.handleSeek(mediaItemIndex, positionMs, seekCommand)
         }
+        val intervalMs = seekIntervalProvider() ?: return super.handleSeek(
+            mediaItemIndex,
+            positionMs,
+            seekCommand,
+        )
+        if (intervalMs <= 0L) {
+            return super.handleSeek(mediaItemIndex, positionMs, seekCommand)
+        }
+
         val now = System.currentTimeMillis()
         // 冷却期内：吞掉本次跳转，播放位置保持不变，并提示剩余等待时间。
         // 注意：此处不区分「是否新视频/是否重新进入」，冷却状态为全局静态，退出再进入也不会重置。
-        if (now - lastSeekAtMs < seekIntervalMs) {
-            val remainingMillis = seekIntervalMs - (now - lastSeekAtMs)
+        if (hasSeekedOnce && now - lastSeekAtMs < intervalMs) {
+            val remainingMillis = intervalMs - (now - lastSeekAtMs)
             if (now - lastNotifyAtMs > SEEK_THROTTLE_NOTIFY_INTERVAL_MS) {
                 lastNotifyAtMs = now
                 onSeekThrottled?.invoke(remainingMillis)
             }
             return Futures.immediateVoidFuture()
         }
+        hasSeekedOnce = true
         lastSeekAtMs = now
         return super.handleSeek(mediaItemIndex, positionMs, seekCommand)
     }
@@ -79,17 +96,23 @@ class ThrottledSeekPlayer(player: Player) : ForwardingSimpleBasePlayer(player) {
     companion object {
         /**
          * 上次成功快进的时间戳（全局静态）。
-         * 初始化为「负间隔」，保证 App 启动后的首次跳转不被拦截。
          * 静态字段在 ThrottledSeekPlayer / PlayerService 重建后依然保留，
          * 因此「退出视频再进入」无法重置冷却。
          */
         @Volatile
-        private var lastSeekAtMs = -SEEK_INTERVAL_MS
+        private var lastSeekAtMs = 0L
+
+        /**
+         * 本次进程内是否成功快进过。
+         *
+         * 用显式标志而不是把 [lastSeekAtMs] 初始化成负值：间隔改成可配置后，
+         * 「负的初始值」得跟着配置走，一旦家长把间隔调到 10 分钟就会出现
+         * 启动后头 10 分钟都拦不住的反向漏洞。标志位与配置完全解耦。
+         */
+        @Volatile
+        private var hasSeekedOnce = false
     }
 }
-
-/** 两次快进之间的最小间隔（毫秒）：默认 2 分钟 */
-const val SEEK_INTERVAL_MS: Long = 120_000L
 
 /** 冷却提示的去抖间隔（毫秒）：两次提示之间至少间隔 1.5 秒 */
 const val SEEK_THROTTLE_NOTIFY_INTERVAL_MS: Long = 1_500L

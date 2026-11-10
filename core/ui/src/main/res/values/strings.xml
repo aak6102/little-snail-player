@@ -240,10 +240,13 @@
     <string name="loop_mode_off">Loop: Off</string>
     <string name="loop_mode_one">Loop: One</string>
     <string name="loop_mode_all">Loop: All</string>
-    <string name="app_developer" translatable="false">anilbeesetti</string>
-    <string name="by">by %1$s</string>
     <string name="libraries">Libraries</string>
     <string name="github">Github</string>
+    <!-- 关于页右上角按钮：指向上游 Next Player 仓库，用于致谢与「标明修改」，
+         不是本应用的官方仓库。按钮是半宽 52dp，写全「Next Player 原项目」会被挤到换行，
+         所以只留三个字，和左边「程序库」对称；具体指向靠 GitHub 图标表达。
+         不参与翻译，避免各语言回退成「Github」看不出含义。 -->
+    <string name="upstream_project" translatable="false">原项目</string>
     <string name="donate">Donate</string>
     <string name="error_opening_link">No app found to handle this link</string>
     <string name="support_the_developer_on">Support the developer on %1$s</string>
@@ -546,4 +549,225 @@
         <item quantity="one">%1$d day</item>
         <item quantity="other">%1$d days</item>
     </plurals>
+
+    <!-- 学习答题锁（小蜗牛播放器自定义功能，仅面向中文使用场景） -->
+    <string name="study_mode" translatable="false">学习模式</string>
+    <string name="study_mode_description" translatable="false">每看 %1$d 分钟答 %2$d 道题；全对看满，答错按错题数递减</string>
+    <string name="study_mode_locked_description" translatable="false">关闭时孩子可以连续观看</string>
+    <string name="study_interval" translatable="false">答题间隔</string>
+    <string name="study_questions" translatable="false">每次题量</string>
+    <string name="study_today_title" translatable="false">今日学习</string>
+    <string name="study_interval_value" translatable="false">每 %1$d 分钟</string>
+    <string name="study_questions_value" translatable="false">每次 %1$d 道题</string>
+    <string name="study_today_stats" translatable="false">今日已答 %1$d 题，答对 %2$d 题</string>
+    <string name="study_today_empty" translatable="false">今天还没有答题记录</string>
+
+    <!-- 防沉迷（休息）锁（小蜗牛播放器自定义功能，仅面向中文使用场景） -->
+    <string name="rest_mode" translatable="false">防沉迷（休息）</string>
+    <string name="rest_mode_description" translatable="false">每看 %1$d 分钟必须休息 %2$d 分钟；否则每 %3$d 分钟答一轮（题量/难度随学习答题）</string>
+    <string name="rest_mode_locked_description" translatable="false">关闭时孩子可以连续观看</string>
+    <string name="rest_window" translatable="false">观察窗口</string>
+    <string name="rest_window_value" translatable="false">最近 %1$d 分钟</string>
+    <string name="rest_required_rest" translatable="false">要求休息</string>
+    <string name="rest_required_rest_value" translatable="false">至少 %1$d 分钟</string>
+    <string name="rest_crazy_interval" translatable="false">疯狂节奏</string>
+    <string name="rest_crazy_interval_value" translatable="false">每 %1$d 分钟一次</string>
+    <string name="rest_pre_warn" translatable="false">预警提前量</string>
+    <string name="rest_pre_warn_value" translatable="false">提前 %1$d 秒提醒</string>
+    <string name="parent_rest_section" translatable="false">防沉迷休息</string>
+    <string name="rest_pre_warn_title" translatable="false">该休息啦</string>
+    <string name="rest_pre_warn_desc" translatable="false">再不休息就要进疯狂答题了，%1$d 秒后开始！</string>
+    <string name="rest_pre_warn_dismiss" translatable="false">知道了</string>
+    <string name="quiz_title_crazy" translatable="false">疯狂答题</string>
+
+    <string name="parent_settings" translatable="false">家长设置</string>
+    <string name="parent_settings_description" translatable="false">学习模式、答题频率与授权（需 4 位密码）</string>
+    <string name="parent_settings_unlocked" translatable="false">家长设置已解锁</string>
+    <string name="parent_study_section" translatable="false">学习答题</string>
+    <string name="parent_data_section" translatable="false">学习数据</string>
+    <string name="parent_seek_section" translatable="false">快进限制</string>
+
+    <string name="study_level" translatable="false">难度档位</string>
+    <string name="study_level_loading" translatable="false">正在读取词表…</string>
+    <string name="study_level_value" translatable="false">%1$s · 出题范围 %2$d 词</string>
+    <string name="study_level_value_downgraded" translatable="false">%1$s · 出题范围 %2$d 词（现在按 %3$s 出题）</string>
+    <string name="study_level_option" translatable="false">%1$s（%2$d 词）</string>
+    <string name="study_level_hint" translatable="false">档位是出题上限：选初中时，起步到初中的词都会考，但不会考高中词。连续答错会自动降一档，连续答对再升回来。</string>
+    <string name="study_bank" translatable="false">词表</string>
+    <string name="study_bank_value" translatable="false">%1$s · %2$d 词</string>
+    <string name="study_bank_option" translatable="false">%1$s（%2$d 词）</string>
+    <string name="study_bank_loading" translatable="false">正在读取词表…</string>
+    <string name="study_bank_hint" translatable="false">换词表不会清空学习记录：同一个单词在别的词表里照样算学过。</string>
+    <string name="study_report" translatable="false">学习报告</string>
+    <string name="study_report_entry_description" translatable="false">近 7 天正确率与最常错的词</string>
+    <string name="study_report_week" translatable="false">近 7 天</string>
+    <string name="study_report_accuracy" translatable="false">%1$d%%</string>
+    <string name="study_report_accuracy_label" translatable="false">正确率</string>
+    <string name="study_report_summary" translatable="false">共答 %1$d 题，答对 %2$d 题</string>
+    <string name="study_report_active_days" translatable="false">有 %1$d 天在学（窗口共 %2$d 天）</string>
+    <string name="study_report_empty" translatable="false">还没有答题记录</string>
+    <string name="study_report_empty_hint" translatable="false">开启学习模式后，孩子每答一题都会记在这里；换天也不会清零。</string>
+    <string name="study_report_words" translatable="false">最常错的词</string>
+    <string name="study_report_level" translatable="false">难度档位 %1$s · 出题范围 %2$d 词</string>
+    <string name="study_report_level_downgraded" translatable="false">难度档位 %1$s · 出题范围 %2$d 词，连续答错后现在按 %3$s 出题</string>
+    <string name="study_report_words_empty" translatable="false">目前没有答错的词</string>
+    <string name="study_report_words_hint" translatable="false">点每行可显示中文释义，可以照着问孩子。</string>
+    <string name="study_report_wrong_times" translatable="false">错 %1$d 次</string>
+    <string name="study_report_debt" translatable="false">待复习</string>
+    <string name="study_report_no_meaning" translatable="false">题库里没有这个词的释义</string>
+    <string name="study_report_tap_for_meaning" translatable="false">点一下看释义</string>
+
+    <!-- 授权与售后 -->
+    <string name="parent_license_section" translatable="false">授权与售后</string>
+    <string name="license_status_title" translatable="false">Pro 授权</string>
+    <string name="license_status_free" translatable="false">未解锁 · 基础快进限制（固定 2 分钟）可用</string>
+    <string name="license_status_trial" translatable="false">试用中，剩余 %1$d 天</string>
+    <string name="license_status_trial_over" translatable="false">试用已结束</string>
+    <string name="license_status_paid" translatable="false">已解锁 · 至 %1$s</string>
+    <string name="license_status_permanent" translatable="false">已解锁 · 永久版</string>
+    <string name="license_buy" translatable="false">解锁 Pro 全部功能</string>
+    <string name="license_buy_hint" translatable="false">试用期内也可随时解锁 · 播放器与基础快进限制永久免费</string>
+    <string name="license_buy_trial_now" translatable="false">立即解锁（试用还剩 %1$d 天）</string>
+    <string name="license_start_trial" translatable="false">免费试用 7 天</string>
+    <string name="license_start_trial_title" translatable="false">开始 7 天免费试用</string>
+    <string name="license_start_trial_message" translatable="false">试用期内 Pro 全部可用：快进自定义间隔或关闭、课标词表、答题锁、学习报告、防沉迷休息。到期后只停 Pro 功能，播放器与基础快进限制（固定 2 分钟）照常使用，孩子的答题记录不会清空。</string>
+    <string name="license_start_trial_ok" translatable="false">开始试用</string>
+    <string name="license_device_title" translatable="false">机器码</string>
+    <string name="license_device_description" translatable="false">换手机时，把新机器码和支付宝交易号一起发到 %1$s</string>
+    <string name="license_copy" translatable="false">复制</string>
+    <string name="license_copied" translatable="false">已复制</string>
+    <string name="license_email" translatable="false">发邮件申请换绑</string>
+    <string name="license_rebind_notice" translatable="false">换绑完成后请重启一次 App 才会生效；每人每年可换 2 次。</string>
+    <string name="license_rebind_title" translatable="false">申请更换绑定设备</string>
+    <string name="license_rebind_new_device" translatable="false">新机器码</string>
+    <string name="license_rebind_new_device_hint" translatable="false">本机机器码，已自动填写</string>
+    <string name="license_rebind_order" translatable="false">支付宝交易号</string>
+    <string name="license_rebind_order_hint" translatable="false">支付宝 → 我的 → 账单 → 找到这笔 → 点进详情 → 复制交易号</string>
+    <string name="license_rebind_send" translatable="false">发邮件</string>
+    <string name="license_rebind_send_failed" translatable="false">换绑信息已复制，可直接粘贴发送给客服</string>
+    <string name="license_order_title" translatable="false">订单号</string>
+    <string name="license_sync" translatable="false">刷新授权状态</string>
+    <string name="license_sync_description" translatable="false">联网失败不影响使用，本地凭证 30 天内有效</string>
+
+    <!-- 购买弹窗 -->
+    <string name="purchase_title" translatable="false">解锁学习模式</string>
+    <string name="purchase_subtitle" translatable="false">播放器永久免费，只有学习模式需要授权</string>
+    <string name="purchase_scan_hint" translatable="false">请用家长的手机打开支付宝扫码</string>
+    <string name="purchase_scan_subhint" translatable="false">也可以用另一台手机扫码；同一台手机可长按保存后到支付宝「扫一扫 → 相册」识别</string>
+    <string name="purchase_amount" translatable="false">应付 %1$s</string>
+    <string name="purchase_expires" translatable="false">二维码 %1$d 秒后失效</string>
+    <string name="purchase_waiting" translatable="false">付款后自动解锁，无需操作</string>
+    <string name="purchase_refresh_qr" translatable="false">刷新二维码</string>
+    <string name="purchase_paid" translatable="false">已解锁，正在开启学习模式…</string>
+    <string name="purchase_timed_out" translatable="false">支付结果确认中，稍后在授权页下拉刷新即可</string>
+    <string name="purchase_confirm" translatable="false">去支付</string>
+    <string name="purchase_close" translatable="false">关闭</string>
+    <string name="purchase_loading" translatable="false">正在生成支付二维码…</string>
+    <string name="purchase_loading_button" translatable="false">正在生成…</string>
+    <string name="purchase_loading_slow" translatable="false">正在连接支付服务，网络较慢，请稍候（不会重复扣款）</string>
+    <string name="purchase_polling_hint" translatable="false">正在确认支付结果…</string>
+    <string name="purchase_recheck" translatable="false">再确认一次</string>
+    <string name="purchase_switch_plan" translatable="false">换套餐</string>
+    <string name="study_report_legend_correct" translatable="false">答对</string>
+    <string name="study_report_legend_wrong" translatable="false">答错</string>
+    <string name="study_disable_confirm_title" translatable="false">关闭学习模式？</string>
+    <string name="study_disable_confirm_message" translatable="false">关闭会在 24 小时后才生效，这段时间里可以随时撤销。就算孩子自己点到这里，今天也关不掉。</string>
+    <string name="study_disable_confirm_ok" translatable="false">排定关闭</string>
+
+    <!-- 家长 PIN 门禁 -->
+    <string name="gate_title_create" translatable="false">设置家长密码</string>
+    <string name="gate_desc_create" translatable="false">以后进入家长设置需要输入这 4 位数字。请避开 1234、生日这类孩子一试就中的组合。</string>
+    <string name="gate_title_confirm" translatable="false">再输一次</string>
+    <string name="gate_desc_confirm" translatable="false">确认刚才那 4 位数字。</string>
+    <string name="gate_mismatch" translatable="false">两次输入不一致，请重新设置</string>
+    <string name="gate_title_verify" translatable="false">输入家长密码</string>
+    <string name="gate_desc_verify" translatable="false">家长设置里可以开关学习模式、调整出题频率。</string>
+    <string name="gate_wrong" translatable="false">密码不对，还能再试 %1$d 次</string>
+    <string name="gate_locked" translatable="false">错误次数过多，请等 %1$d 分钟后再试</string>
+    <string name="gate_locked_hint" translatable="false">锁定期间不需要做任何操作，到点自动解除。</string>
+    <string name="gate_forgot" translatable="false">忘记密码？</string>
+    <string name="gate_recovery_title" translatable="false">输入恢复码</string>
+    <string name="gate_recovery_desc" translatable="false">设置密码时生成过一串 8 位数字，找到后填在这里。</string>
+    <string name="gate_recovery_wrong" translatable="false">恢复码不对</string>
+    <string name="gate_recovery_show_title" translatable="false">请抄下这串恢复码</string>
+    <string name="gate_recovery_show_desc" translatable="false">忘记密码时只有它能救回来。只显示这一次，我们也不保存副本 —— 换手机、清数据都会丢，请存到手机备忘录或纸上。</string>
+    <string name="gate_recovery_copied" translatable="false">我已抄下，继续</string>
+    <string name="gate_recovery_copy" translatable="false">复制恢复码</string>
+    <string name="gate_reset_title" translatable="false">设置新密码</string>
+    <string name="gate_reset_desc" translatable="false">重设后旧恢复码作废，会给你一串新的。</string>
+    <string name="gate_continue" translatable="false">继续</string>
+    <string name="gate_setting_up" translatable="false">正在设置…</string>
+    <string name="gate_lost_all" translatable="false">恢复码也找不到，就只能清除应用数据了</string>
+    <string name="gate_lost_all_detail" translatable="false">设置 → 应用 → 小蜗牛播放器 → 存储 → 清除数据。\n注意：学习记录、答题进度和家长密码会一起删除，无法恢复。付费授权不会丢，联网后自动恢复。\n清理之前请先确认：孩子在平板系统里没有「清除数据」的权限。</string>
+    <string name="gate_change_title" translatable="false">修改家长密码</string>
+    <string name="gate_change_section" translatable="false">家长密码</string>
+    <string name="gate_change_entry" translatable="false">修改家长密码</string>
+    <string name="gate_change_entry_desc" translatable="false">需要先输入当前的 4 位密码</string>
+    <string name="study_auto_disable_pending" translatable="false">学习模式将于 %1$s 自动关闭</string>
+    <string name="study_auto_disabled" translatable="false">学习模式已于 %1$s 关闭</string>
+    <string name="study_auto_disable_undo" translatable="false">撤销</string>
+    <string name="study_auto_disable_restore" translatable="false">重新开启</string>
+
+    <string name="seek_throttle" translatable="false">限制快进</string>
+    <string name="seek_throttle_description_on" translatable="false">每 %1$d 分钟只能快进一次</string>
+    <string name="seek_throttle_description_off" translatable="false">关闭后可以随意拖动进度条</string>
+    <string name="seek_interval" translatable="false">快进冷却</string>
+    <string name="seek_interval_value" translatable="false">每 %1$d 分钟一次</string>
+    <!-- 冷却设成 0 分钟时的说法：显示「每 0 分钟一次」会被当成 bug -->
+    <string name="seek_interval_value_unlimited" translatable="false">不限制</string>
+    <string name="seek_throttle_description_unlimited" translatable="false">已开启，但快进不限次数</string>
+    <!-- 免费版（未授权）：快进限制固定常开、固定 2 分钟，不可调也不可关 -->
+    <string name="seek_throttle_free_locked" translatable="false">已开启，固定每 2 分钟一次；升级 Pro 可自定义间隔或关闭</string>
+    <!-- 自定义数字弹窗：「自定义」那行点开原地展开输入框，改完按「完成」才写盘 -->
+    <string name="parent_number_custom" translatable="false">自定义</string>
+    <string name="parent_number_done" translatable="false">完成</string>
+    <string name="parent_number_range" translatable="false">可填 %1$d – %2$d</string>
+    <string name="parent_number_unit_minutes" translatable="false">分钟</string>
+    <string name="parent_number_unit_questions" translatable="false">道</string>
+    <string name="parent_number_unit_seconds" translatable="false">秒</string>
+
+    <string name="quiz_title" translatable="false">小小挑战</string>
+    <string name="quiz_subtitle" translatable="false">答对就能继续看</string>
+    <string name="quiz_progress" translatable="false">第 %1$d 题 / 共 %2$d 题</string>
+    <string name="quiz_hint_word_to_zh" translatable="false">选出这个单词的意思</string>
+    <string name="quiz_hint_listen" translatable="false">听一听，选出正确的单词</string>
+    <string name="quiz_hint_emoji" translatable="false">看图片，选出对应的单词</string>
+    <string name="quiz_replay" translatable="false">再听一遍（慢一点）</string>
+    <string name="quiz_speaker_no_engine" translatable="false">这台设备没有朗读引擎，听力题放不出声音。请在系统设置里安装「文字转语音」后重试</string>
+    <string name="quiz_speaker_no_english" translatable="false">朗读引擎缺少英文语音包，请在系统设置的「文字转语音」里下载英语语音</string>
+    <string name="quiz_wrong_retry" translatable="false">再想想，答对就能继续看</string>
+    <string name="quiz_hint_eliminated" translatable="false">已经划掉 %1$d 个错的了，再选一次</string>
+    <string name="quiz_answer_revealed" translatable="false">正确答案：%1$s</string>
+    <string name="quiz_reveal_confirm" translatable="false">我记住了，继续看</string>
+    <string name="quiz_hint_pick_answer" translatable="false">正确答案是 %1$s，点它一下就能继续</string>
+
+    <string name="quiz_summary_perfect_title" translatable="false">全部答对</string>
+    <string name="quiz_summary_perfect_desc" translatable="false">可以继续看 %1$d 分钟</string>
+    <string name="quiz_summary_retry_title" translatable="false">有答错的题</string>
+    <string name="quiz_summary_retry_desc" translatable="false">这次只能再看 %1$d 分钟，答对了才能看满</string>
+    <string name="quiz_summary_score" translatable="false">一次答对 %1$d / %2$d 题</string>
+    <string name="quiz_summary_easier_hint" translatable="false">这几题偏难，接下来先练些简单的。</string>
+    <string name="quiz_summary_continue" translatable="false">继续观看</string>
+
+    <!-- 在线升级（v1.15.0 新增，仅中文使用场景，与 license_*/purchase_* 一致） -->
+    <string name="update_check" translatable="false">检查更新</string>
+    <string name="update_title" translatable="false">软件更新</string>
+    <string name="update_checking" translatable="false">正在检查更新…</string>
+    <string name="update_up_to_date" translatable="false">已是最新版本</string>
+    <string name="update_available_title" translatable="false">发现新版本 %1$s</string>
+    <string name="update_size" translatable="false">安装包约 %1$s MB</string>
+    <string name="update_notes" translatable="false">更新内容：%1$s</string>
+    <string name="update_wifi_hint" translatable="false">建议在 Wi-Fi 下下载，安装时需您在系统界面点「安装」</string>
+    <string name="update_downloading" translatable="false">正在下载更新 %1$d%%</string>
+    <string name="update_install_hint" translatable="false">下载完成，请在系统安装界面点「安装」。安装完成后本应用会自动重启</string>
+
+    <!-- 开源合规（v1.18.0 新增）：GPL-3.0 要求提供源码获取途径，且名称与标识不在源码授权范围内 -->
+    <string name="view_source_code" translatable="false">查看源码（GPL-3.0）</string>
+    <string name="source_code_pending" translatable="false">源码仓库地址即将公布</string>
+    <string name="gpl_notice" translatable="false">本应用基于 Next Player 修改，依 GPL-3.0 开放源代码。名称与图标不在源码授权范围内，再分发请更换名称与图标。</string>
+    <string name="update_permission_hint" translatable="false">请先允许「安装未知来源应用」，再回来点检查更新</string>
+    <string name="update_now" translatable="false">立即更新</string>
+    <string name="update_later" translatable="false">稍后</string>
+    <string name="update_close" translatable="false">知道了</string>
+    <string name="update_open_settings" translatable="false">去设置</string>
 </resources>

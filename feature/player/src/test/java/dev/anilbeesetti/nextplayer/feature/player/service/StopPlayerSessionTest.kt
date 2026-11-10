@@ -131,6 +131,7 @@ class StopPlayerSessionTest {
                         }
                     }
                 },
+                studyTestModule(),
             )
         }
         val player = ExoPlayer.Builder(RuntimeEnvironment.getApplication()).build()

@@ -13,6 +13,13 @@ import kotlinx.coroutines.launch
 import org.koin.core.annotation.InjectedParam
 import org.koin.core.annotation.KoinViewModel
 
+/**
+ * 通用设置。
+ *
+ * 学习模式与快进限制**不在这里**：它们只出现在「关于」页连点版本号进入的家长设置页。
+ * 移走是刻意的——把入口从「一眼能看到的开关」变成「不知道有这回事」，
+ * 比在开关上再加一道算术题有效得多。
+ */
 @KoinViewModel
 class GeneralPreferencesViewModel(
     private val preferencesRepository: PreferencesRepository,

@@ -52,6 +52,7 @@ class PlaybackSpeedSessionTest {
                         )
                     }
                 },
+                studyTestModule(),
             )
         }
     }

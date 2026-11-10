@@ -35,6 +35,9 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)
+    // 票据载荷解析：core:model 已声明 kotlinx-serialization，但那是 implementation，
+    // 不传递到本模块，所以要显式声明一次（只用到 Json 运行时，不需要再挂插件）
+    implementation(libs.kotlinx.serialization.json)
     implementation(libs.github.anilbeesetti.nextlib.mediainfo)
 
     // Koin

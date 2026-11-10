@@ -31,6 +31,7 @@ koinCompiler = "1.2.1"
 kotlin = "2.4.20"
 kotlinxCoroutines = "1.11.0"
 kotlinxSerializationJson = "1.11.0"
+zxing = "3.5.2"
 ksp = "2.3.12"
 ktlint = "12.3.0"
 reorderable = "3.1.0"
@@ -106,6 +107,8 @@ kotlinx-coroutines-guava = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-
 kotlinx-coroutines-test = { group = "org.jetbrains.kotlinx", name = "kotlinx-coroutines-test", version.ref = "kotlinxCoroutines" }
 kotlinx-serialization-json = { group = "org.jetbrains.kotlinx", name = "kotlinx-serialization-json", version.ref = "kotlinxSerializationJson" }
 reorderable = { module = "sh.calvin.reorderable:reorderable", version.ref = "reorderable" }
+# 二维码本地生成：只买授权不买「出图服务」，遇到断网也要能把已付款的码显示出来
+zxing-core = { group = "com.google.zxing", name = "core", version.ref = "zxing" }
 robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
 smbj = { group = "com.hierynomus", name = "smbj", version.ref = "smbj" }
 smbj-rpc = { group = "com.rapid7.client", name = "dcerpc", version.ref = "smbjRpc" }

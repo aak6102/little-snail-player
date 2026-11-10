@@ -14,9 +14,11 @@ android {
     defaultConfig {
         minSdk = libs.versions.android.minSdk.get().toInt()
         targetSdk = libs.versions.android.targetSdk.get().toInt()
-        applicationId = "dev.anilbeesetti.nextplayer"
-        versionCode = 1
-        versionName = "1.0.0"
+        // 自有包名：域名 709048.xyz 倒写。namespace 保持不变（那是 Kotlin/Java 包结构，
+        // 与系统识别的应用 ID 无关，改它需要移动全部源码目录且没有任何收益）。
+        applicationId = "xyz.a709048.snailplayer"
+        versionCode = 33
+        versionName = "1.18.0"
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
 

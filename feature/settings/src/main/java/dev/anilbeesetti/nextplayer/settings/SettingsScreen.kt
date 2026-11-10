@@ -111,6 +111,8 @@ enum class Setting {
     AUDIO,
     SUBTITLE,
     GENERAL,
+    /** 家长设置：学习模式、答题频率、授权与购买。进门要输 4 位 PIN。 */
+    PARENT,
     ABOUT,
 }
 
@@ -161,6 +163,12 @@ private enum class SettingRow(
         descriptionResId = R.string.general_description,
         icon = NextIcons.ExtraSettings,
         setting = Setting.GENERAL,
+    ),
+    PARENT(
+        titleResId = R.string.parent_settings,
+        descriptionResId = R.string.parent_settings_description,
+        icon = NextIcons.Lock,
+        setting = Setting.PARENT,
     ),
     ABOUT(
         titleResId = R.string.about_name,

@@ -1,6 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+  自适应图标：108dp 画布，安全区只有中间 72dp（66.7%）。
+
+  原图里蜗牛占自身宽度约 71%，如果整张图满幅铺开，启动器按 72dp 裁切时
+  必然切到蜗牛。所以前景图是预先缩到 68% 并居中合成的
+  （生成脚本见 output 说明），蜗牛因此完整落在安全区内，圆形遮罩下也不缺角。
+
+  background 用纯品牌色只是兜底：前景图本身已铺满整张 108dp 画布
+  （主体外围用原图背景渐变补齐），所以看不到 background —— 这样做是为了
+  防止某些启动器做视差位移时露出透明区域。
+-->
 <adaptive-icon xmlns:android="http://schemas.android.com/apk/res/android">
-    <background android:drawable="@color/ic_launcher_background_tint"/>
-    <foreground android:drawable="@drawable/ic_launcher_foreground"/>
-    <monochrome android:drawable="@drawable/ic_launcher_foreground" />
+    <background android:drawable="@color/ic_launcher_background_tint" />
+    <foreground android:drawable="@mipmap/ic_launcher_fg" />
 </adaptive-icon>

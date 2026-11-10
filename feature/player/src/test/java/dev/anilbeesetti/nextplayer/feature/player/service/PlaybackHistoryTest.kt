@@ -46,6 +46,7 @@ class PlaybackHistoryTest {
                     single<MediaRepository> { repository }
                     single { ImageLoader.Builder(RuntimeEnvironment.getApplication()).build() }
                 },
+                studyTestModule(),
             )
         }
         val service = PlayerService()

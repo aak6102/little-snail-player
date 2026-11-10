@@ -20,11 +20,15 @@ import dev.anilbeesetti.nextplayer.settings.navigation.navigateToGeneralPreferen
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToGesturePreferences
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToLibraries
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToMediaLibraryPreferencesScreen
+import dev.anilbeesetti.nextplayer.settings.navigation.navigateToParentPreferences
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToPlayerPreferences
+import dev.anilbeesetti.nextplayer.settings.navigation.navigateToStudyReport
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToSubtitlePreferences
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToThumbnailPreferencesScreen
+import dev.anilbeesetti.nextplayer.settings.navigation.parentPreferencesEntry
 import dev.anilbeesetti.nextplayer.settings.navigation.playerPreferencesEntry
 import dev.anilbeesetti.nextplayer.settings.navigation.settingsEntry
+import dev.anilbeesetti.nextplayer.settings.navigation.studyReportEntry
 import dev.anilbeesetti.nextplayer.settings.navigation.subtitlePreferencesEntry
 import dev.anilbeesetti.nextplayer.settings.navigation.thumbnailPreferencesEntry
 
@@ -42,6 +46,7 @@ fun EntryProviderScope<NavKey>.settingsNavGraph(
                 Setting.AUDIO -> backStack.navigateToAudioPreferences()
                 Setting.SUBTITLE -> backStack.navigateToSubtitlePreferences()
                 Setting.GENERAL -> backStack.navigateToGeneralPreferences()
+                Setting.PARENT -> backStack.navigateToParentPreferences()
                 Setting.ABOUT -> backStack.navigateToAboutPreferences()
             }
         },
@@ -77,6 +82,16 @@ fun EntryProviderScope<NavKey>.settingsNavGraph(
     )
     aboutPreferencesEntry(
         onLibrariesClick = backStack::navigateToLibraries,
+        onOpenParentSettings = backStack::navigateToParentPreferences,
+        onNavigateUp = { backStack.removeLastIfNotRoot() },
+    )
+    parentPreferencesEntry(
+        // 门禁要判断「这个页面是不是真的离开了」，得能读返回栈
+        backStack = backStack,
+        onNavigateUp = { backStack.removeLastIfNotRoot() },
+        onNavigateToReport = backStack::navigateToStudyReport,
+    )
+    studyReportEntry(
         onNavigateUp = { backStack.removeLastIfNotRoot() },
     )
     librariesEntry(

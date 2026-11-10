@@ -47,13 +47,16 @@ import dev.anilbeesetti.nextplayer.core.common.extensions.getFilenameFromUri
 import dev.anilbeesetti.nextplayer.core.common.extensions.getLocalSubtitles
 import dev.anilbeesetti.nextplayer.core.common.extensions.getPath
 import dev.anilbeesetti.nextplayer.core.common.extensions.subtitleCacheDir
+import dev.anilbeesetti.nextplayer.core.data.repository.LicenseRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.MediaRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.PreferencesRepository
+import dev.anilbeesetti.nextplayer.core.data.repository.StudyRepository
 import dev.anilbeesetti.nextplayer.core.media.network.NetworkUri
 import dev.anilbeesetti.nextplayer.core.media.network.datasource.NextDataSourceFactory
 import dev.anilbeesetti.nextplayer.core.model.LoopMode
 import dev.anilbeesetti.nextplayer.core.model.PlayerPreferences
 import dev.anilbeesetti.nextplayer.core.model.Resume
+import dev.anilbeesetti.nextplayer.core.model.effectiveSeekIntervalMillis
 import dev.anilbeesetti.nextplayer.core.ui.R as coreUiR
 import dev.anilbeesetti.nextplayer.feature.player.PlayerActivity
 import dev.anilbeesetti.nextplayer.feature.player.R
@@ -76,6 +79,8 @@ import dev.anilbeesetti.nextplayer.feature.player.extensions.videoDecoderMode
 import dev.anilbeesetti.nextplayer.feature.player.extensions.videoZoom
 import dev.anilbeesetti.nextplayer.feature.player.extensions.withExternalAudio
 import dev.anilbeesetti.nextplayer.feature.player.model.DecoderTrackType
+import dev.anilbeesetti.nextplayer.feature.player.study.QuizGate
+import dev.anilbeesetti.nextplayer.feature.player.study.RestGuard
 import dev.anilbeesetti.nextplayer.feature.player.utils.isExplicitPlaylistItem
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderManager
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderMode
@@ -92,7 +97,9 @@ import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.guava.future
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.supervisorScope
@@ -113,6 +120,16 @@ class PlayerService : MediaSessionService() {
     private val mediaRepository: MediaRepository by inject()
 
     private val imageLoader: ImageLoader by inject()
+
+    private val quizGate: QuizGate by inject()
+
+    private val restGuard: RestGuard by inject()
+
+    private val studyRepository: StudyRepository by inject()
+
+    private val licenseRepository: LicenseRepository by inject()
+
+    private var quizTickerJob: Job? = null
 
     private val playerPreferences: PlayerPreferences
         get() = preferencesRepository.playerPreferences.value
@@ -218,6 +235,7 @@ class PlayerService : MediaSessionService() {
             restoreDecoderChoices(mediaItem)
             isMediaItemReady = false
             loadArtworkForCurrentMediaItem()
+            restorePendingQuizLockOnce()
             mediaItem?.mediaMetadata?.let { metadata ->
                 mediaSession?.player?.run {
                     playerSpecificSubtitleDelayMilliseconds = metadata.subtitleDelayMilliseconds ?: 0L
@@ -711,6 +729,34 @@ class PlayerService : MediaSessionService() {
         }
     }
 
+    /**
+     * 学习答题锁：每秒统计一次「真的在播」的时长。
+     *
+     * 计时必须放在 Service 而不是 Compose 层——本应用支持后台播放与通知栏控制，
+     * 写在 UI 层的话，切后台、锁屏、按 Home 键都能绕过拦截。
+     * 用 isPlaying 判定而不是 positionMs 差值，顺带免疫「反复拖进度条刷时长」。
+     */
+    private fun startQuizTicker() {
+        quizTickerJob?.cancel()
+        quizTickerJob = serviceScope.launch {
+            while (isActive) {
+                delay(QUIZ_TICK_INTERVAL_MS)
+                val player = mediaSession?.player ?: continue
+                val progressing = player.isPlaying && player.playbackState == Player.STATE_READY
+                quizGate.onTick(if (progressing) QUIZ_TICK_INTERVAL_MS else 0L)
+                restGuard.onTick(progressing)
+            }
+        }
+    }
+
+    /**
+     * 上次被强杀/闪退打断在答题页时，重新进入播放要恢复锁定。
+     * 方法内部会自行去重，这里每次拿到媒体项都调一次即可。
+     */
+    private fun restorePendingQuizLockOnce() {
+        quizGate.restorePendingLock()
+    }
+
     override fun onCreate() {
         super.onCreate()
         decoderManager = DecoderManager()
@@ -753,10 +799,16 @@ class PlayerService : MediaSessionService() {
                 }
             }
 
-        // 快进节流：用 ThrottledSeekPlayer 包裹真实 ExoPlayer 交给 MediaSession/UI，
-        // 内核层对每次跳转强制 2 分钟最小间隔；冷却期内会回调提示剩余等待时间。
+        // 快进节流：用 ThrottledSeekPlayer 包裹真实 ExoPlayer 交给 MediaSession/UI。
+        // 冷却时长与开关由家长在家长设置页配置，每次跳转现读，改完设置立刻生效。
+        // 收费分层（方案 C）：已授权（Pro / 试用期）按家长设置；未授权强制常开、固定 2 分钟。
         // 解码器与分析监听仍使用原始 player。
-        val throttledPlayer = ThrottledSeekPlayer(player)
+        val throttledPlayer = ThrottledSeekPlayer(player) {
+            effectiveSeekIntervalMillis(
+                pro = licenseRepository.statusNow().pro,
+                preferences = studyRepository.preferences,
+            )
+        }
         throttledPlayer.onSeekThrottled = { remainingMillis ->
             showSeekThrottledToast(remainingMillis)
         }
@@ -789,6 +841,12 @@ class PlayerService : MediaSessionService() {
         } catch (e: Exception) {
             e.printStackTrace()
         }
+
+        // 学习答题锁：绑定播放器并开始按「有效播放时长」计时
+        quizGate.attach(throttledPlayer)
+        startQuizTicker()
+        // 防沉迷：恢复窗口历史（杀进程重进仍记得「已经看了多久」），随后由 ticker 持续计时
+        restGuard.restore()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {
@@ -814,6 +872,8 @@ class PlayerService : MediaSessionService() {
 
     override fun onDestroy() {
         super.onDestroy()
+        quizTickerJob?.cancel()
+        quizGate.detach()
         artworkLoadJob?.cancel()
         loudnessEnhancer?.release()
         loudnessEnhancer = null
@@ -1098,6 +1158,9 @@ private val DecoderTrackType.mediaTrackType: Int
     }
 
 private const val DECODER_LOG_TAG = "Decoder"
+
+/** 学习答题锁的计时粒度：1 秒足够精确，也几乎不耗电。 */
+private const val QUIZ_TICK_INTERVAL_MS = 1_000L
 
 @get:UnstableApi
 @set:UnstableApi

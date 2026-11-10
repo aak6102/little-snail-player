@@ -11,11 +11,14 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.snapshotFlow
+import androidx.compose.ui.Modifier
 import androidx.core.util.Consumer
 import androidx.lifecycle.lifecycleScope
 import androidx.media3.common.C
@@ -43,6 +46,10 @@ import dev.anilbeesetti.nextplayer.feature.player.service.setVideoDecoderMode
 import dev.anilbeesetti.nextplayer.feature.player.service.stopPlayerSession
 import dev.anilbeesetti.nextplayer.feature.player.service.tryDecoderFallback
 import dev.anilbeesetti.nextplayer.feature.player.state.rememberMediaController
+import dev.anilbeesetti.nextplayer.feature.player.study.QuizGate
+import dev.anilbeesetti.nextplayer.feature.player.study.QuizOverlay
+import dev.anilbeesetti.nextplayer.feature.player.study.RestGuard
+import dev.anilbeesetti.nextplayer.feature.player.study.RestPreWarnOverlay
 import dev.anilbeesetti.nextplayer.feature.player.utils.PlayerApi
 import dev.anilbeesetti.nextplayer.feature.player.utils.PlaylistPlaybackContract
 import dev.anilbeesetti.nextplayer.feature.player.utils.asExplicitPlaylistItem
@@ -72,6 +79,8 @@ class PlayerActivity : ComponentActivity() {
 
     private val playlistRepository: PlaylistRepository by inject()
     private val mediaRepository: MediaRepository by inject()
+    private val quizGate: QuizGate by inject()
+    private val restGuard: RestGuard by inject()
 
     private val viewModel: PlayerViewModel by viewModel { parametersOf(playerOutput()) }
     val playerPreferences get() = viewModel.state.value.playerPreferences
@@ -143,10 +152,16 @@ class PlayerActivity : ComponentActivity() {
             }
 
             NextPlayerTheme(darkTheme = true) {
-                MediaPlayerScreen(
-                    viewModel = viewModel,
-                    player = player,
-                )
+                Box(modifier = Modifier.fillMaxSize()) {
+                    MediaPlayerScreen(
+                        viewModel = viewModel,
+                        player = player,
+                    )
+                    // 答题锁浮层叠在播放器之上：全屏、不可关闭、吞掉返回键
+                    QuizOverlay(gate = quizGate)
+                    // 防沉迷预警浮层（进入疯狂模式前 30 秒提醒），叠在答题锁之上
+                    RestPreWarnOverlay(guard = restGuard)
+                }
             }
         }
     }

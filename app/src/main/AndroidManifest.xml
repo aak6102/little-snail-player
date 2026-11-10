@@ -3,6 +3,8 @@
     xmlns:tools="http://schemas.android.com/tools">
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <!-- 在线升级：Android 8+ 安装自家下载的 APK 必须声明，且用户需在系统设置里授权 -->
+    <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES" />
     <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
     <uses-permission android:name="android.permission.READ_MEDIA_VIDEO" />
     <uses-permission
@@ -22,6 +24,18 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"
         tools:ignore="ScopedStorage" />
+
+    <!--
+        Android 11 起的包可见性限制：不声明这段，queryIntentServices 就查不到任何
+        TTS 引擎。系统没设置默认引擎的设备（国产 ROM、精简系统很常见）上，
+        TextToSpeech 必须先靠 getEngines() 自己挑一个，查不到就 onInit 失败，
+        表现为“点了喇叭完全没声音”，而且没有任何报错提示。
+    -->
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+    </queries>
 
     <application
         android:name=".NextPlayerApplication"

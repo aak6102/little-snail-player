@@ -28,10 +28,15 @@ fun NavBackStack<NavKey>.navigateToLibraries() {
 
 fun EntryProviderScope<NavKey>.aboutPreferencesEntry(
     onLibrariesClick: () -> Unit,
+    onOpenParentSettings: () -> Unit,
     onNavigateUp: () -> Unit,
 ) {
     entry<AboutPreferencesRoute> {
-        val output = AboutPreferencesViewModel.Output(navigateUp = onNavigateUp, openLibraries = onLibrariesClick)
+        val output = AboutPreferencesViewModel.Output(
+            navigateUp = onNavigateUp,
+            openLibraries = onLibrariesClick,
+            openParentSettings = onOpenParentSettings,
+        )
         val viewModel = koinViewModel<AboutPreferencesViewModel>(
             parameters = { parametersOf(output) },
         )

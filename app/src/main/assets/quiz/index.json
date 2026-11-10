@@ -1,0 +1,12 @@
+{
+  "version": 2,
+  "defaultBankId": "kebiao_five",
+  "banks": [
+    {
+      "id": "kebiao_five",
+      "name": "课标五档",
+      "description": "起步 / 进阶 / 小学 / 初中 / 高中，选中档位即出题上限",
+      "file": "five_levels.json"
+    }
+  ]
+}

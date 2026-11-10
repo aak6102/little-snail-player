@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_launcher_background_tint">#FF1F2526</color>
-    <color name="ic_launcher_foreground_tint">#FF8FD4D1</color>
+    <!-- 与启动图标同一套品牌色：薄荷绿底 + 奶油白图案。
+         改这两个色值会同时影响启动画面（ic_splash）与图标兜底色。 -->
+    <color name="ic_launcher_background_tint">#FF35C79B</color>
+    <color name="ic_launcher_foreground_tint">#FFF7EDD9</color>
 </resources>

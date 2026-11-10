@@ -1,6 +1,5 @@
 package dev.anilbeesetti.nextplayer.settings.screens.about
 
-import android.content.ClipData
 import android.content.Context
 import android.widget.Toast
 import androidx.compose.animation.core.RepeatMode
@@ -9,6 +8,8 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.interaction.MutableInteractionSource
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -29,14 +30,14 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledTonalIconButton
 import androidx.compose.material3.Icon
-import androidx.compose.material3.ListItemDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -45,33 +46,31 @@ import androidx.compose.ui.geometry.CornerRadius
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.vector.ImageVector
-import androidx.compose.ui.platform.ClipEntry
-import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalUriHandler
 import androidx.compose.ui.platform.UriHandler
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
-import androidx.compose.ui.res.vectorResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import dev.anilbeesetti.nextplayer.core.common.extensions.appIcon
 import dev.anilbeesetti.nextplayer.core.ui.R
-import dev.anilbeesetti.nextplayer.core.ui.components.ClickablePreferenceItem
-import dev.anilbeesetti.nextplayer.core.ui.components.ListSectionTitle
 import dev.anilbeesetti.nextplayer.core.ui.components.NextTopAppBar
 import dev.anilbeesetti.nextplayer.core.ui.components.rememberTvListFocusRequester
 import dev.anilbeesetti.nextplayer.core.ui.components.tvFocusDown
 import dev.anilbeesetti.nextplayer.core.ui.components.tvListFocus
 import dev.anilbeesetti.nextplayer.core.ui.designsystem.NextIcons
-import kotlinx.coroutines.launch
 
-private const val GITHUB_URL = "https://github.com/anilbeesetti/nextplayer"
-private const val KOFI_URL = "https://ko-fi.com/anilbeesetti"
-private const val PAYPAL_URL = "https://paypal.me/AnilBeesetti"
-private const val UPI_ID = "anilbeesetti10@oksbi"
+private const val UPSTREAM_URL = "https://github.com/anilbeesetti/nextplayer"
+
+/**
+ * 本应用自己的源码仓库地址（GPL-3.0 要求提供源码获取途径）。
+ *
+ * **发布正式包前必须填成真实地址**；留空时「查看源码」会提示「即将公布」，
+ * 这样即使忘了改，也不会把死链发到用户手里。
+ */
+private const val SOURCE_URL = ""
 
 @Composable
 fun AboutPreferencesScreen(viewModel: AboutPreferencesViewModel) {
@@ -87,9 +86,6 @@ private fun AboutPreferencesScreenContent(
 ) {
     val context = LocalContext.current
     val uriHandler = LocalUriHandler.current
-    val clipboard = LocalClipboard.current
-    val scope = rememberCoroutineScope()
-
     val listFocusRequester = rememberTvListFocusRequester()
     Scaffold(
         topBar = {
@@ -118,54 +114,18 @@ private fun AboutPreferencesScreenContent(
         ) {
             AboutApp(
                 appVersion = state.appVersion,
-                onGithubClick = {
+                onUpstreamClick = {
                     uriHandler.openUriOrShowToast(
-                        uri = GITHUB_URL,
+                        uri = UPSTREAM_URL,
                         context = context,
                     )
                 },
                 onLibrariesClick = { onAction(AboutPreferencesAction.OpenLibraries) },
+                onCheckUpdateClick = { onAction(AboutPreferencesAction.CheckForUpdate) },
             )
-            ListSectionTitle(text = stringResource(id = R.string.donate))
-            Column(
-                verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
-            ) {
-                ClickablePreferenceItem(
-                    title = stringResource(R.string.kofi),
-                    description = stringResource(R.string.support_the_developer_on, stringResource(R.string.kofi)),
-                    icon = ImageVector.vectorResource(R.drawable.ic_kofi),
-                    onClick = {
-                        uriHandler.openUriOrShowToast(
-                            uri = KOFI_URL,
-                            context = context,
-                        )
-                    },
-                    isFirstItem = true,
-                )
-                ClickablePreferenceItem(
-                    title = stringResource(R.string.paypal),
-                    description = stringResource(R.string.support_the_developer_on, stringResource(R.string.paypal)),
-                    icon = ImageVector.vectorResource(R.drawable.ic_paypal),
-                    onClick = {
-                        uriHandler.openUriOrShowToast(
-                            uri = PAYPAL_URL,
-                            context = context,
-                        )
-                    },
-                )
-                ClickablePreferenceItem(
-                    title = stringResource(R.string.upi),
-                    description = UPI_ID,
-                    icon = ImageVector.vectorResource(R.drawable.ic_upi),
-                    onClick = {
-                        scope.launch {
-                            clipboard.setClipEntry(ClipEntry(ClipData.newPlainText("text", UPI_ID)))
-                            Toast.makeText(context, "copied to clipboard", Toast.LENGTH_SHORT).show()
-                        }
-                    },
-                    isLastItem = true,
-                )
-            }
+            // 捐助入口原来指向上游作者（Ko-fi / PayPal / 印度 UPI）。本应用是付费解锁的
+            // 衍生产品，再挂别人的收款渠道会让家长以为钱付给了我们，UPI 在国内更是完全
+            // 用不了，所以整块移除。对上游的致谢留在上面的「原项目」入口和程序库列表里。
         }
     }
 }
@@ -174,10 +134,12 @@ private fun AboutPreferencesScreenContent(
 fun AboutApp(
     appVersion: String,
     modifier: Modifier = Modifier,
-    onGithubClick: () -> Unit,
+    onUpstreamClick: () -> Unit,
     onLibrariesClick: () -> Unit,
+    onCheckUpdateClick: () -> Unit,
 ) {
     val context = LocalContext.current
+    val uriHandler = LocalUriHandler.current
     val appIcon = remember { context.appIcon()?.asImageBitmap() }
 
     val colorPrimary = MaterialTheme.colorScheme.primaryContainer
@@ -185,7 +147,7 @@ fun AboutApp(
 
     val transition = rememberInfiniteTransition()
     val fraction by transition.animateFloat(
-        initialValue = 0f,
+        initialValue =0f,
         targetValue = 1f,
         animationSpec = infiniteRepeatable(
             animation = tween(durationMillis = 5000),
@@ -253,11 +215,6 @@ fun AboutApp(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 12.sp,
                     )
-                    Text(
-                        text = stringResource(R.string.by, stringResource(R.string.app_developer)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    )
                 }
             }
         }
@@ -283,7 +240,7 @@ fun AboutApp(
                 Text(text = stringResource(R.string.libraries))
             }
             Button(
-                onClick = onGithubClick,
+                onClick = onUpstreamClick,
                 colors = ButtonDefaults.buttonColors(
                     contentColor = MaterialTheme.colorScheme.onTertiary,
                     disabledContentColor = MaterialTheme.colorScheme.onTertiary.copy(alpha = .12f),
@@ -302,9 +259,58 @@ fun AboutApp(
                     modifier = Modifier.size(24.dp),
                 )
                 Spacer(modifier = Modifier.width(8.dp))
-                Text(text = stringResource(R.string.github))
+                Text(text = stringResource(R.string.upstream_project))
             }
         }
+
+        // 单独占一行：三个按钮挤在一排会让「检查更新」四个字被压得太窄
+        Button(
+            onClick = onCheckUpdateClick,
+            colors = ButtonDefaults.buttonColors(
+                contentColor = MaterialTheme.colorScheme.onPrimary,
+                disabledContentColor = MaterialTheme.colorScheme.onPrimary.copy(alpha = .12f),
+                containerColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.8f),
+                disabledContainerColor = MaterialTheme.colorScheme.primary.copy(alpha = .12f),
+            ),
+            shape = RoundedCornerShape(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .height(52.dp),
+        ) {
+            Text(text = stringResource(R.string.update_check))
+        }
+
+        // 开源合规（GPL-3.0）：必须让用户有途径拿到源码，同时说明名称与标识不在
+        // 源码授权范围内。地址留空时给提示而不开空链接，见 SOURCE_URL 注释。
+        TextButton(
+            onClick = {
+                if (SOURCE_URL.isBlank()) {
+                    Toast.makeText(
+                        context,
+                        context.getString(R.string.source_code_pending),
+                        Toast.LENGTH_SHORT,
+                    ).show()
+                } else {
+                    uriHandler.openUriOrShowToast(uri = SOURCE_URL, context = context)
+                }
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) {
+            Icon(
+                painter = painterResource(R.drawable.ic_github),
+                contentDescription = null,
+                modifier = Modifier.size(20.dp),
+            )
+            Spacer(modifier = Modifier.width(8.dp))
+            Text(text = stringResource(R.string.view_source_code))
+        }
+
+        Text(
+            text = stringResource(R.string.gpl_notice),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            fontSize = 11.sp,
+        )
     }
 }
 

@@ -1,7 +1,99 @@
-This privacy policy pertains the Next Player app.
+# 小蜗牛播放器 隐私政策
 
-Next Player does not collect or access any personal information. No identifying information or user data of any kind is made available to third-parties.
+最后更新：2026 年 11 月 10 日
+生效日期：2026 年 11 月 10 日
 
-This Privacy Policy is effective as of July 21th, 2023 and will remain in effect except with respect to any changes in its provisions in the future, which will be in effect immediately after being posted on this page. We reserve the right to update or change our Privacy Policy at any time and you should check this Privacy Policy periodically. Your continued use of the Service after we post any modifications to the Privacy Policy on this page will constitute your acknowledgment of the modifications and your consent to abide and be bound by the modified Privacy Policy.
+本应用「小蜗牛播放器」（应用包名 `xyz.a709048.snailplayer`，以下简称"本应用"）由个人开发者（以下简称"我们"）提供。我们重视你和孩子的个人信息保护，本政策说明我们收集什么、不收集什么、如何使用与保存，以及你可以行使的权利。
 
-Next Player is published by Anil Kumar Beesetti. Inquiries can be submitted to anilbeesetti10@gmail.com.
+**本应用是基于 Next Player 开源项目（GPL-3.0）修改的衍生版本。上游项目本身的隐私政策不适用于本应用，本应用的信息处理由我们负责。**
+
+---
+
+## 一、我们不收集的信息
+
+以下信息**本应用不会读取、不会上传、不会与任何第三方共享**：
+
+- 你设备上的视频文件、文件名、目录结构
+- 你观看的内容、观看历史、播放进度（仅保存在本机）
+- 孩子的学习记录、错题池、答题结果（仅保存在本机）
+- 通讯录、短信、通话记录、位置、相机、麦克风
+- 手机号、IMEI、MAC 地址、广告标识符（OAID/IDFA）
+
+本应用不含广告 SDK、不含统计分析 SDK、不做用户画像、不向第三方出售任何数据。
+
+## 二、我们会收集的信息
+
+### 1. 设备标识（用于授权绑定）
+
+当你首次启动、开始试用、购买授权或检查更新时，本应用会生成一个**设备标识**并发送至我们的服务器：
+
+```
+device_id = SHA256(固定盐值 + Android ANDROID_ID) 的前 16 位
+```
+
+- **用途**：将授权绑定到具体设备，防止同一授权被无限复制；支持换机换绑。
+- **说明**：该值不可逆推原始 ANDROID_ID，也不包含你的姓名、手机号或任何可直接识别个人身份的信息。Android 8 起 ANDROID_ID 按应用签名隔离，同签名卸载重装不变，恢复出厂设置才会变化。
+
+### 2. 应用版本与运行环境
+
+上报 `app_version`（如 1.18.0）与设备 CPU 架构（如 arm64-v8a），用于判断是否需要下发更新、选择正确的安装包。
+
+### 3. 订单与授权记录
+
+当你购买 Pro 时，我们会记录：订单号、套餐标识、金额、支付状态、支付宝交易号、授权有效期、换绑次数。
+
+- **用途**：发货、续费累计、售后换绑、对账。
+- **我们不接收、不存储**你的支付宝账号、密码、银行卡号或支付密码。支付全程在支付宝完成，我们只接收支付宝返回的支付结果通知。
+
+## 三、信息的存储位置与期限
+
+| 项目 | 位置 | 期限 |
+|---|---|---|
+| 播放进度、学习记录、错题池、家长设置 | 仅你的设备本地 | 由你控制，卸载即删除 |
+| 授权票据 | 你的设备本地（离线可用 30 天） | 有效期 30 天，联网自动续期 |
+| 设备标识、订单、授权记录 | 我们的服务器（Cloudflare Workers / D1，**服务器位于中国大陆境外**） | 订单与授权记录自产生起保留 3 年，用于售后与对账；到期删除 |
+
+使用本应用的授权与更新功能，意味着上述有限信息会被传输至境外服务器。若不希望发生该传输，你可以不使用授权相关功能；播放器本身的本地功能不依赖网络。
+
+## 四、第三方
+
+| 第三方 | 共享内容 | 目的 |
+|---|---|---|
+| 支付宝（蚂蚁集团） | 订单号、金额、商品名称 | 完成支付与支付结果通知 |
+| Cloudflare, Inc. | 上述服务器端数据 | 提供接口托管、数据库与文件存储 |
+
+除上述两方及法律法规要求的情形外，我们不会向任何第三方提供你的信息。
+
+## 五、未成年人保护
+
+本应用面向家长，由家长在自己的设备上安装、配置并决定是否开启学习功能。
+
+- 我们**不主动收集儿童的个人信息**，也不要求孩子注册账号或填写任何身份资料。
+- 孩子的答题记录与学习报告**只保存在本机**，不上传服务器。
+- 家长设置页受 PIN 保护，用于防止孩子自行修改限制。
+- 若你是家长，发现孩子在未经你同意的情况下使用了本应用，可通过下方联系方式要求我们删除相关服务器端记录（如有）。
+
+## 六、你的权利
+
+你可以通过 `support@709048.xyz` 提出以下请求，我们会在 15 个工作日内答复：
+
+- 查询我们持有的与你设备相关的信息
+- 更正不准确的订单或授权记录
+- 删除设备标识与授权记录（删除后将无法继续使用 Pro 权益）
+- 注销授权（解除本机与订单的绑定）
+
+## 七、信息安全
+
+- 授权凭证采用 RSA-2048 / SHA-256 签名，客户端离线验签，防止伪造。
+- 服务器通信全程 HTTPS。
+- 我们不会通过邮件或任何渠道向你索要密码、验证码或支付密码。
+
+## 八、政策变更
+
+本政策如有变更，我们会在本页面更新"最后更新"日期，并在应用内或官网公示。涉及收集范围扩大的变更，会在生效前显著提示。
+
+## 九、联系我们
+
+- 邮箱：`support@709048.xyz`
+- 应用：小蜗牛播放器（`xyz.a709048.snailplayer`）
+- 开源仓库：见 README 中的源码地址

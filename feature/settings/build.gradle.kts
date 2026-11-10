@@ -42,6 +42,9 @@ dependencies {
 
     implementation(libs.androidx.core.ktx)
 
+    // BackHandler：恢复码页要吞掉系统返回键（Compose 的返回拦截在这个 artifact 里）
+    implementation(libs.androidx.activity.compose)
+
     // Compose
     implementation(platform(libs.androidx.compose.bom))
     implementation(libs.androidx.compose.ui)
@@ -55,6 +58,9 @@ dependencies {
 
     // Coil
     implementation(libs.coil.compose)
+
+    // 二维码本地渲染（Apache-2.0，不与 GPL 的 App 主体冲突）
+    implementation(libs.zxing.core)
 
     // Koin
     implementation(libs.koin.core)

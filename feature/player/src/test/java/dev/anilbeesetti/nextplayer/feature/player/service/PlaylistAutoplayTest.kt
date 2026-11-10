@@ -86,7 +86,7 @@ class PlaylistAutoplayTest {
     private fun withPlayer(autoplay: Boolean, check: (ExoPlayer) -> Unit) {
         val preferences = FakePreferencesRepository()
         runBlocking { preferences.updatePlayerPreferences { it.copy(autoplay = autoplay) } }
-        startKoin { modules(module { single<PreferencesRepository> { preferences } }) }
+        startKoin { modules(module { single<PreferencesRepository> { preferences } }, studyTestModule()) }
         val context = RuntimeEnvironment.getApplication()
         val player = ExoPlayer.Builder(context).build()
         val session = MediaSession.Builder(context, player).build()

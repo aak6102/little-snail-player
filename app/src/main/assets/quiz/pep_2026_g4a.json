@@ -1,0 +1,1886 @@
+{
+  "version": 1,
+  "name": "人教 PEP 四年级上册（2026 新版）",
+  "description": "2026 秋新教材 Words in each unit，Unit 1-6 共 109 词。cook 在 Unit 1（烹饪）与 Unit 4（厨师）出现两次，合并为一条多义词。",
+  "words": [
+    {
+      "id": "pep4a_u1_pe",
+      "word": "PE",
+      "pos": "n.",
+      "zh": [
+        "体育(课)"
+      ],
+      "tags": [
+        "u1",
+        "school"
+      ],
+      "confusables": [
+        "job",
+        "sport"
+      ]
+    },
+    {
+      "id": "pep4a_u1_job",
+      "word": "job",
+      "pos": "n.",
+      "zh": [
+        "工作;职业"
+      ],
+      "tags": [
+        "u1",
+        "job"
+      ],
+      "confusables": [
+        "doctor",
+        "farmer",
+        "nurse"
+      ]
+    },
+    {
+      "id": "pep4a_u1_doctor",
+      "word": "doctor",
+      "pos": "n.",
+      "zh": [
+        "医生"
+      ],
+      "tags": [
+        "u1",
+        "job"
+      ],
+      "emoji": "👨‍⚕️",
+      "confusables": [
+        "nurse",
+        "farmer",
+        "cleaner"
+      ]
+    },
+    {
+      "id": "pep4a_u1_farmer",
+      "word": "farmer",
+      "pos": "n.",
+      "zh": [
+        "农场主;农民"
+      ],
+      "tags": [
+        "u1",
+        "job"
+      ],
+      "emoji": "👨‍🌾",
+      "confusables": [
+        "doctor",
+        "nurse",
+        "factory worker"
+      ]
+    },
+    {
+      "id": "pep4a_u1_nurse",
+      "word": "nurse",
+      "pos": "n.",
+      "zh": [
+        "护士"
+      ],
+      "tags": [
+        "u1",
+        "job"
+      ],
+      "emoji": "👩‍⚕️",
+      "confusables": [
+        "doctor",
+        "farmer",
+        "cleaner"
+      ]
+    },
+    {
+      "id": "pep4a_u1_office_worker",
+      "word": "office worker",
+      "pos": "n.",
+      "zh": [
+        "公司职员"
+      ],
+      "tags": [
+        "u1",
+        "job"
+      ],
+      "emoji": "💼",
+      "confusables": [
+        "factory worker",
+        "delivery worker"
+      ]
+    },
+    {
+      "id": "pep4a_u1_factory_worker",
+      "word": "factory worker",
+      "pos": "n.",
+      "zh": [
+        "工厂工人"
+      ],
+      "tags": [
+        "u1",
+        "job"
+      ],
+      "emoji": "🏭",
+      "confusables": [
+        "office worker",
+        "farmer",
+        "delivery worker"
+      ]
+    },
+    {
+      "id": "pep4a_u1_busy",
+      "word": "busy",
+      "pos": "adj.",
+      "zh": [
+        "忙碌的"
+      ],
+      "tags": [
+        "u1",
+        "adj"
+      ],
+      "confusables": [
+        "tired",
+        "old"
+      ]
+    },
+    {
+      "id": "pep4a_u1_tired",
+      "word": "tired",
+      "pos": "adj.",
+      "zh": [
+        "疲倦的"
+      ],
+      "tags": [
+        "u1",
+        "adj"
+      ],
+      "confusables": [
+        "busy",
+        "old"
+      ]
+    },
+    {
+      "id": "pep4a_u1_chore",
+      "word": "chore",
+      "pos": "n.",
+      "zh": [
+        "家庭杂务"
+      ],
+      "tags": [
+        "u1",
+        "chore"
+      ],
+      "confusables": [
+        "sweep",
+        "clean",
+        "make the bed"
+      ]
+    },
+    {
+      "id": "pep4a_u1_cook",
+      "word": "cook",
+      "pos": "v./n.",
+      "zh": [
+        "烹饪;煮",
+        "厨师"
+      ],
+      "tags": [
+        "u1",
+        "u4",
+        "chore",
+        "job"
+      ],
+      "emoji": "👨‍🍳",
+      "confusables": [
+        "clean",
+        "sweep",
+        "make the bed"
+      ]
+    },
+    {
+      "id": "pep4a_u1_clean",
+      "word": "clean",
+      "pos": "v./adj.",
+      "zh": [
+        "打扫;干净的"
+      ],
+      "tags": [
+        "u1",
+        "chore"
+      ],
+      "emoji": "🧽",
+      "confusables": [
+        "sweep",
+        "cook",
+        "chore"
+      ]
+    },
+    {
+      "id": "pep4a_u1_room",
+      "word": "room",
+      "pos": "n.",
+      "zh": [
+        "房间"
+      ],
+      "tags": [
+        "u1",
+        "place"
+      ],
+      "confusables": [
+        "floor",
+        "place"
+      ]
+    },
+    {
+      "id": "pep4a_u1_look_after",
+      "word": "look after",
+      "pos": "phr.",
+      "zh": [
+        "照顾"
+      ],
+      "tags": [
+        "u1",
+        "chore"
+      ],
+      "confusables": [
+        "clean",
+        "cook",
+        "tell"
+      ]
+    },
+    {
+      "id": "pep4a_u1_sweep",
+      "word": "sweep",
+      "pos": "v.",
+      "zh": [
+        "扫"
+      ],
+      "tags": [
+        "u1",
+        "chore"
+      ],
+      "emoji": "🧹",
+      "confusables": [
+        "clean",
+        "cook",
+        "chore"
+      ]
+    },
+    {
+      "id": "pep4a_u1_floor",
+      "word": "floor",
+      "pos": "n.",
+      "zh": [
+        "地板;地面"
+      ],
+      "tags": [
+        "u1",
+        "place"
+      ],
+      "confusables": [
+        "room",
+        "place"
+      ]
+    },
+    {
+      "id": "pep4a_u1_together",
+      "word": "together",
+      "pos": "adv.",
+      "zh": [
+        "在一起;共同"
+      ],
+      "tags": [
+        "u1"
+      ],
+      "confusables": [
+        "everyone",
+        "people",
+        "get together"
+      ]
+    },
+    {
+      "id": "pep4a_u1_people",
+      "word": "people",
+      "pos": "n.",
+      "zh": [
+        "人;人们"
+      ],
+      "tags": [
+        "u1",
+        "people"
+      ],
+      "emoji": "👥",
+      "confusables": [
+        "child",
+        "everyone"
+      ]
+    },
+    {
+      "id": "pep4a_u1_child",
+      "word": "child",
+      "pos": "n.",
+      "zh": [
+        "儿童;小孩"
+      ],
+      "tags": [
+        "u1",
+        "people"
+      ],
+      "emoji": "🧒",
+      "confusables": [
+        "people",
+        "everyone"
+      ]
+    },
+    {
+      "id": "pep4a_u2_his",
+      "word": "his",
+      "pos": "det.",
+      "zh": [
+        "他的"
+      ],
+      "tags": [
+        "u2",
+        "pronoun"
+      ],
+      "confusables": [
+        "their",
+        "mine",
+        "whose"
+      ]
+    },
+    {
+      "id": "pep4a_u2_strong",
+      "word": "strong",
+      "pos": "adj.",
+      "zh": [
+        "强壮的"
+      ],
+      "tags": [
+        "u2",
+        "adj"
+      ],
+      "emoji": "💪",
+      "confusables": [
+        "kind",
+        "quiet",
+        "best"
+      ]
+    },
+    {
+      "id": "pep4a_u2_hair",
+      "word": "hair",
+      "pos": "n.",
+      "zh": [
+        "头发"
+      ],
+      "tags": [
+        "u2",
+        "body"
+      ],
+      "confusables": [
+        "strong",
+        "kind"
+      ]
+    },
+    {
+      "id": "pep4a_u2_also",
+      "word": "also",
+      "pos": "adv.",
+      "zh": [
+        "也"
+      ],
+      "tags": [
+        "u2"
+      ],
+      "confusables": [
+        "always",
+        "then",
+        "together"
+      ]
+    },
+    {
+      "id": "pep4a_u2_kind",
+      "word": "kind",
+      "pos": "adj.",
+      "zh": [
+        "友好的"
+      ],
+      "tags": [
+        "u2",
+        "adj"
+      ],
+      "confusables": [
+        "quiet",
+        "strong",
+        "best"
+      ]
+    },
+    {
+      "id": "pep4a_u2_quiet",
+      "word": "quiet",
+      "pos": "adj.",
+      "zh": [
+        "文静的"
+      ],
+      "tags": [
+        "u2",
+        "adj"
+      ],
+      "confusables": [
+        "kind",
+        "strong",
+        "best"
+      ]
+    },
+    {
+      "id": "pep4a_u2_best",
+      "word": "best",
+      "pos": "adj.",
+      "zh": [
+        "最好的"
+      ],
+      "tags": [
+        "u2",
+        "adj"
+      ],
+      "confusables": [
+        "kind",
+        "quiet",
+        "favourite"
+      ]
+    },
+    {
+      "id": "pep4a_u2_read",
+      "word": "read",
+      "pos": "v.",
+      "zh": [
+        "阅读"
+      ],
+      "tags": [
+        "u2",
+        "action"
+      ],
+      "emoji": "📖",
+      "confusables": [
+        "play",
+        "story",
+        "tell"
+      ]
+    },
+    {
+      "id": "pep4a_u2_chinese",
+      "word": "Chinese",
+      "pos": "n./adj.",
+      "zh": [
+        "中文;中国人;中国的"
+      ],
+      "tags": [
+        "u2",
+        "school"
+      ],
+      "confusables": [
+        "PE",
+        "Sydney"
+      ]
+    },
+    {
+      "id": "pep4a_u2_play",
+      "word": "play",
+      "pos": "v.",
+      "zh": [
+        "玩耍"
+      ],
+      "tags": [
+        "u2",
+        "action"
+      ],
+      "confusables": [
+        "game",
+        "read",
+        "football"
+      ]
+    },
+    {
+      "id": "pep4a_u2_game",
+      "word": "game",
+      "pos": "n.",
+      "zh": [
+        "游戏"
+      ],
+      "tags": [
+        "u2",
+        "action"
+      ],
+      "emoji": "🎮",
+      "confusables": [
+        "play",
+        "football",
+        "basketball"
+      ]
+    },
+    {
+      "id": "pep4a_u2_football",
+      "word": "football",
+      "pos": "n.",
+      "zh": [
+        "足球运动"
+      ],
+      "tags": [
+        "u2",
+        "sport"
+      ],
+      "emoji": "⚽",
+      "confusables": [
+        "basketball",
+        "game",
+        "sport"
+      ]
+    },
+    {
+      "id": "pep4a_u2_basketball",
+      "word": "basketball",
+      "pos": "n.",
+      "zh": [
+        "篮球运动"
+      ],
+      "tags": [
+        "u2",
+        "sport"
+      ],
+      "emoji": "🏀",
+      "confusables": [
+        "football",
+        "game",
+        "sport"
+      ]
+    },
+    {
+      "id": "pep4a_u2_always",
+      "word": "always",
+      "pos": "adv.",
+      "zh": [
+        "总是"
+      ],
+      "tags": [
+        "u2"
+      ],
+      "confusables": [
+        "also",
+        "then",
+        "now"
+      ]
+    },
+    {
+      "id": "pep4a_u3_afternoon",
+      "word": "afternoon",
+      "pos": "n.",
+      "zh": [
+        "下午"
+      ],
+      "tags": [
+        "u3",
+        "time"
+      ],
+      "emoji": "🌇",
+      "confusables": [
+        "tomorrow",
+        "now",
+        "then"
+      ]
+    },
+    {
+      "id": "pep4a_u3_there",
+      "word": "there",
+      "pos": "adv.",
+      "zh": [
+        "(表示存在或发生);在那里"
+      ],
+      "tags": [
+        "u3"
+      ],
+      "confusables": [
+        "over",
+        "place"
+      ]
+    },
+    {
+      "id": "pep4a_u3_playground",
+      "word": "playground",
+      "pos": "n.",
+      "zh": [
+        "游乐场;操场"
+      ],
+      "tags": [
+        "u3",
+        "place"
+      ],
+      "emoji": "🛝",
+      "confusables": [
+        "park",
+        "sport",
+        "place"
+      ]
+    },
+    {
+      "id": "pep4a_u3_park",
+      "word": "park",
+      "pos": "n.",
+      "zh": [
+        "公园"
+      ],
+      "tags": [
+        "u3",
+        "place"
+      ],
+      "emoji": "🌳",
+      "confusables": [
+        "playground",
+        "place",
+        "shop"
+      ]
+    },
+    {
+      "id": "pep4a_u3_over",
+      "word": "over",
+      "pos": "prep.",
+      "zh": [
+        "在……的远端(或对面)"
+      ],
+      "tags": [
+        "u3"
+      ],
+      "confusables": [
+        "there"
+      ]
+    },
+    {
+      "id": "pep4a_u3_hospital",
+      "word": "hospital",
+      "pos": "n.",
+      "zh": [
+        "医院"
+      ],
+      "tags": [
+        "u3",
+        "place"
+      ],
+      "emoji": "🏥",
+      "confusables": [
+        "shop",
+        "library",
+        "toilet"
+      ]
+    },
+    {
+      "id": "pep4a_u3_ms",
+      "word": "Ms",
+      "pos": "n.",
+      "zh": [
+        "女士"
+      ],
+      "tags": [
+        "u3",
+        "people"
+      ],
+      "confusables": [
+        "his",
+        "their"
+      ]
+    },
+    {
+      "id": "pep4a_u3_shop",
+      "word": "shop",
+      "pos": "n.",
+      "zh": [
+        "商店"
+      ],
+      "tags": [
+        "u3",
+        "place"
+      ],
+      "emoji": "🏪",
+      "confusables": [
+        "hospital",
+        "library",
+        "park"
+      ]
+    },
+    {
+      "id": "pep4a_u3_toilet",
+      "word": "toilet",
+      "pos": "n.",
+      "zh": [
+        "厕所;卫生间"
+      ],
+      "tags": [
+        "u3",
+        "place"
+      ],
+      "emoji": "🚻",
+      "confusables": [
+        "hospital",
+        "shop",
+        "library"
+      ]
+    },
+    {
+      "id": "pep4a_u3_bus_stop",
+      "word": "bus stop",
+      "pos": "n.",
+      "zh": [
+        "公共汽车站"
+      ],
+      "tags": [
+        "u3",
+        "place"
+      ],
+      "emoji": "🚌",
+      "confusables": [
+        "shop",
+        "park",
+        "library"
+      ]
+    },
+    {
+      "id": "pep4a_u3_library",
+      "word": "library",
+      "pos": "n.",
+      "zh": [
+        "图书馆"
+      ],
+      "tags": [
+        "u3",
+        "place"
+      ],
+      "emoji": "📚",
+      "confusables": [
+        "shop",
+        "hospital",
+        "place"
+      ]
+    },
+    {
+      "id": "pep4a_u3_sport",
+      "word": "sport",
+      "pos": "n.",
+      "zh": [
+        "体育运动"
+      ],
+      "tags": [
+        "u3",
+        "sport"
+      ],
+      "emoji": "🏃",
+      "confusables": [
+        "football",
+        "basketball",
+        "game"
+      ]
+    },
+    {
+      "id": "pep4a_u3_walk",
+      "word": "walk",
+      "pos": "v.",
+      "zh": [
+        "散步;行走"
+      ],
+      "tags": [
+        "u3",
+        "action"
+      ],
+      "emoji": "🚶",
+      "confusables": [
+        "swim",
+        "fly",
+        "sport"
+      ]
+    },
+    {
+      "id": "pep4a_u3_community",
+      "word": "community",
+      "pos": "n.",
+      "zh": [
+        "社区"
+      ],
+      "tags": [
+        "u3",
+        "place"
+      ],
+      "confusables": [
+        "place",
+        "hospital",
+        "library"
+      ]
+    },
+    {
+      "id": "pep4a_u3_favourite",
+      "word": "favourite",
+      "pos": "adj.",
+      "zh": [
+        "最喜欢的"
+      ],
+      "tags": [
+        "u3"
+      ],
+      "confusables": [
+        "best",
+        "kind"
+      ]
+    },
+    {
+      "id": "pep4a_u3_place",
+      "word": "place",
+      "pos": "n.",
+      "zh": [
+        "地方;场所"
+      ],
+      "tags": [
+        "u3",
+        "place"
+      ],
+      "confusables": [
+        "park",
+        "shop",
+        "community"
+      ]
+    },
+    {
+      "id": "pep4a_u3_photo",
+      "word": "photo",
+      "pos": "n.",
+      "zh": [
+        "照片"
+      ],
+      "tags": [
+        "u3"
+      ],
+      "emoji": "📷",
+      "confusables": [
+        "story",
+        "film"
+      ]
+    },
+    {
+      "id": "pep4a_u3_story",
+      "word": "story",
+      "pos": "n.",
+      "zh": [
+        "故事"
+      ],
+      "tags": [
+        "u3"
+      ],
+      "emoji": "📕",
+      "confusables": [
+        "photo",
+        "film",
+        "read"
+      ]
+    },
+    {
+      "id": "pep4a_u3_buy",
+      "word": "buy",
+      "pos": "v.",
+      "zh": [
+        "购买"
+      ],
+      "tags": [
+        "u3",
+        "action"
+      ],
+      "emoji": "🛒",
+      "confusables": [
+        "shop",
+        "photo"
+      ]
+    },
+    {
+      "id": "pep4a_u4_firefighter",
+      "word": "firefighter",
+      "pos": "n.",
+      "zh": [
+        "消防队员"
+      ],
+      "tags": [
+        "u4",
+        "job"
+      ],
+      "emoji": "👨‍🚒",
+      "confusables": [
+        "police officer",
+        "driver",
+        "cleaner"
+      ]
+    },
+    {
+      "id": "pep4a_u4_why",
+      "word": "why",
+      "pos": "adv.",
+      "zh": [
+        "为什么"
+      ],
+      "tags": [
+        "u4"
+      ],
+      "confusables": [
+        "which",
+        "whose",
+        "there"
+      ]
+    },
+    {
+      "id": "pep4a_u4_driver",
+      "word": "driver",
+      "pos": "n.",
+      "zh": [
+        "司机"
+      ],
+      "tags": [
+        "u4",
+        "job"
+      ],
+      "emoji": "🚗",
+      "confusables": [
+        "cleaner",
+        "police officer",
+        "firefighter"
+      ]
+    },
+    {
+      "id": "pep4a_u4_cleaner",
+      "word": "cleaner",
+      "pos": "n.",
+      "zh": [
+        "清洁工"
+      ],
+      "tags": [
+        "u4",
+        "job"
+      ],
+      "confusables": [
+        "driver",
+        "firefighter",
+        "police officer"
+      ]
+    },
+    {
+      "id": "pep4a_u4_delivery_worker",
+      "word": "delivery worker",
+      "pos": "n.",
+      "zh": [
+        "快递员"
+      ],
+      "tags": [
+        "u4",
+        "job"
+      ],
+      "emoji": "📦",
+      "confusables": [
+        "office worker",
+        "factory worker",
+        "driver"
+      ]
+    },
+    {
+      "id": "pep4a_u4_police_officer",
+      "word": "police officer",
+      "pos": "n.",
+      "zh": [
+        "警察;警员"
+      ],
+      "tags": [
+        "u4",
+        "job"
+      ],
+      "emoji": "👮",
+      "confusables": [
+        "firefighter",
+        "driver",
+        "cleaner"
+      ]
+    },
+    {
+      "id": "pep4a_u4_a_lot_of",
+      "word": "a lot of",
+      "pos": "phr.",
+      "zh": [
+        "大量;许多"
+      ],
+      "tags": [
+        "u4"
+      ],
+      "confusables": [
+        "everyone",
+        "people"
+      ]
+    },
+    {
+      "id": "pep4a_u4_now",
+      "word": "now",
+      "pos": "adv.",
+      "zh": [
+        "现在"
+      ],
+      "tags": [
+        "u4",
+        "time"
+      ],
+      "emoji": "🕐",
+      "confusables": [
+        "tomorrow",
+        "afternoon",
+        "then"
+      ]
+    },
+    {
+      "id": "pep4a_u4_make_the_bed",
+      "word": "make the bed",
+      "pos": "phr.",
+      "zh": [
+        "铺床"
+      ],
+      "tags": [
+        "u4",
+        "chore"
+      ],
+      "emoji": "🛏️",
+      "confusables": [
+        "clean",
+        "sweep",
+        "cook"
+      ]
+    },
+    {
+      "id": "pep4a_u4_old",
+      "word": "old",
+      "pos": "adj.",
+      "zh": [
+        "过去的;年纪大的;老的"
+      ],
+      "tags": [
+        "u4"
+      ],
+      "confusables": [
+        "busy",
+        "tired",
+        "bad"
+      ]
+    },
+    {
+      "id": "pep4a_u4_tell",
+      "word": "tell",
+      "pos": "v.",
+      "zh": [
+        "讲述;告诉"
+      ],
+      "tags": [
+        "u4",
+        "action"
+      ],
+      "emoji": "💬",
+      "confusables": [
+        "speak",
+        "read",
+        "look after"
+      ]
+    },
+    {
+      "id": "pep4a_u4_everyone",
+      "word": "everyone",
+      "pos": "pron.",
+      "zh": [
+        "每人"
+      ],
+      "tags": [
+        "u4",
+        "people"
+      ],
+      "emoji": "👨‍👩‍👧",
+      "confusables": [
+        "people",
+        "child",
+        "together"
+      ]
+    },
+    {
+      "id": "pep4a_u5_speak",
+      "word": "speak",
+      "pos": "v.",
+      "zh": [
+        "说话;发言"
+      ],
+      "tags": [
+        "u5",
+        "action"
+      ],
+      "emoji": "🗣️",
+      "confusables": [
+        "tell",
+        "read",
+        "play"
+      ]
+    },
+    {
+      "id": "pep4a_u5_weather",
+      "word": "weather",
+      "pos": "n.",
+      "zh": [
+        "天气"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "emoji": "🌤️",
+      "confusables": [
+        "sunny",
+        "cold",
+        "hot"
+      ]
+    },
+    {
+      "id": "pep4a_u5_sunny",
+      "word": "sunny",
+      "pos": "adj.",
+      "zh": [
+        "阳光充足的"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "emoji": "☀️",
+      "confusables": [
+        "cloudy",
+        "rainy",
+        "snowy",
+        "windy"
+      ]
+    },
+    {
+      "id": "pep4a_u5_hot",
+      "word": "hot",
+      "pos": "adj.",
+      "zh": [
+        "热的"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "emoji": "🥵",
+      "confusables": [
+        "cold",
+        "cool",
+        "warm"
+      ]
+    },
+    {
+      "id": "pep4a_u5_bad",
+      "word": "bad",
+      "pos": "adj.",
+      "zh": [
+        "令人不快的;坏的"
+      ],
+      "tags": [
+        "u5"
+      ],
+      "confusables": [
+        "old",
+        "fun"
+      ]
+    },
+    {
+      "id": "pep4a_u5_cold",
+      "word": "cold",
+      "pos": "adj.",
+      "zh": [
+        "冷的"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "emoji": "🥶",
+      "confusables": [
+        "hot",
+        "cool",
+        "warm"
+      ]
+    },
+    {
+      "id": "pep4a_u5_windy",
+      "word": "windy",
+      "pos": "adj.",
+      "zh": [
+        "多风的"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "emoji": "🌬️",
+      "confusables": [
+        "cloudy",
+        "rainy",
+        "sunny",
+        "snowy"
+      ]
+    },
+    {
+      "id": "pep4a_u5_cloudy",
+      "word": "cloudy",
+      "pos": "adj.",
+      "zh": [
+        "多云的"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "emoji": "☁️",
+      "confusables": [
+        "sunny",
+        "rainy",
+        "windy",
+        "snowy"
+      ]
+    },
+    {
+      "id": "pep4a_u5_rainy",
+      "word": "rainy",
+      "pos": "adj.",
+      "zh": [
+        "阴雨的"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "emoji": "🌧️",
+      "confusables": [
+        "sunny",
+        "cloudy",
+        "snowy",
+        "windy"
+      ]
+    },
+    {
+      "id": "pep4a_u5_snowy",
+      "word": "snowy",
+      "pos": "adj.",
+      "zh": [
+        "多雪的"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "emoji": "🌨️",
+      "confusables": [
+        "rainy",
+        "sunny",
+        "cloudy",
+        "windy"
+      ]
+    },
+    {
+      "id": "pep4a_u5_cool",
+      "word": "cool",
+      "pos": "adj.",
+      "zh": [
+        "凉爽的"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "confusables": [
+        "cold",
+        "warm",
+        "hot"
+      ]
+    },
+    {
+      "id": "pep4a_u5_warm",
+      "word": "warm",
+      "pos": "adj.",
+      "zh": [
+        "温暖的"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "confusables": [
+        "cool",
+        "cold",
+        "hot"
+      ]
+    },
+    {
+      "id": "pep4a_u5_tomorrow",
+      "word": "tomorrow",
+      "pos": "adv.",
+      "zh": [
+        "在明天"
+      ],
+      "tags": [
+        "u5",
+        "time"
+      ],
+      "emoji": "📅",
+      "confusables": [
+        "now",
+        "afternoon",
+        "then"
+      ]
+    },
+    {
+      "id": "pep4a_u5_rain",
+      "word": "rain",
+      "pos": "n./v.",
+      "zh": [
+        "下雨;雨"
+      ],
+      "tags": [
+        "u5",
+        "weather"
+      ],
+      "confusables": [
+        "snow",
+        "rainy",
+        "snowy"
+      ]
+    },
+    {
+      "id": "pep4a_u5_closed",
+      "word": "closed",
+      "pos": "adj.",
+      "zh": [
+        "关闭的"
+      ],
+      "tags": [
+        "u5"
+      ],
+      "confusables": [
+        "bad",
+        "old"
+      ]
+    },
+    {
+      "id": "pep4a_u5_film",
+      "word": "film",
+      "pos": "n.",
+      "zh": [
+        "电影"
+      ],
+      "tags": [
+        "u5"
+      ],
+      "emoji": "🎬",
+      "confusables": [
+        "story",
+        "photo",
+        "game"
+      ]
+    },
+    {
+      "id": "pep4a_u5_idea",
+      "word": "idea",
+      "pos": "n.",
+      "zh": [
+        "想法;主意"
+      ],
+      "tags": [
+        "u5"
+      ],
+      "emoji": "💡",
+      "confusables": [
+        "story",
+        "game"
+      ]
+    },
+    {
+      "id": "pep4a_u5_fly",
+      "word": "fly",
+      "pos": "v.",
+      "zh": [
+        "操纵(飞行器等);飞"
+      ],
+      "tags": [
+        "u5",
+        "action"
+      ],
+      "emoji": "✈️",
+      "confusables": [
+        "swim",
+        "walk",
+        "kite"
+      ]
+    },
+    {
+      "id": "pep4a_u5_kite",
+      "word": "kite",
+      "pos": "n.",
+      "zh": [
+        "风筝"
+      ],
+      "tags": [
+        "u5"
+      ],
+      "emoji": "🪁",
+      "confusables": [
+        "snowman",
+        "fly",
+        "game"
+      ]
+    },
+    {
+      "id": "pep4a_u5_snowman",
+      "word": "snowman",
+      "pos": "n.",
+      "zh": [
+        "雪人"
+      ],
+      "tags": [
+        "u5"
+      ],
+      "emoji": "⛄",
+      "confusables": [
+        "kite",
+        "snow",
+        "winter"
+      ]
+    },
+    {
+      "id": "pep4a_u5_fun",
+      "word": "fun",
+      "pos": "n.",
+      "zh": [
+        "享乐;乐趣"
+      ],
+      "tags": [
+        "u5"
+      ],
+      "confusables": [
+        "game",
+        "sport",
+        "best"
+      ]
+    },
+    {
+      "id": "pep4a_u5_their",
+      "word": "their",
+      "pos": "det.",
+      "zh": [
+        "他们的;她们的;它们的"
+      ],
+      "tags": [
+        "u5",
+        "pronoun"
+      ],
+      "confusables": [
+        "his",
+        "mine",
+        "whose"
+      ]
+    },
+    {
+      "id": "pep4a_u5_swim",
+      "word": "swim",
+      "pos": "v.",
+      "zh": [
+        "游泳"
+      ],
+      "tags": [
+        "u5",
+        "action"
+      ],
+      "emoji": "🏊",
+      "confusables": [
+        "fly",
+        "walk",
+        "sport"
+      ]
+    },
+    {
+      "id": "pep4a_u5_sydney",
+      "word": "Sydney",
+      "pos": "n.",
+      "zh": [
+        "悉尼"
+      ],
+      "tags": [
+        "u5",
+        "place"
+      ],
+      "confusables": [
+        "Chinese",
+        "place"
+      ]
+    },
+    {
+      "id": "pep4a_u6_snow",
+      "word": "snow",
+      "pos": "n./v.",
+      "zh": [
+        "下雪;雪"
+      ],
+      "tags": [
+        "u6",
+        "weather"
+      ],
+      "emoji": "❄️",
+      "confusables": [
+        "snowy",
+        "rain",
+        "snowman"
+      ]
+    },
+    {
+      "id": "pep4a_u6_get_together",
+      "word": "get together",
+      "pos": "phr.",
+      "zh": [
+        "聚会"
+      ],
+      "tags": [
+        "u6"
+      ],
+      "confusables": [
+        "together",
+        "everyone"
+      ]
+    },
+    {
+      "id": "pep4a_u6_whose",
+      "word": "whose",
+      "pos": "det.",
+      "zh": [
+        "谁的"
+      ],
+      "tags": [
+        "u6",
+        "pronoun"
+      ],
+      "confusables": [
+        "which",
+        "mine",
+        "their"
+      ]
+    },
+    {
+      "id": "pep4a_u6_spring",
+      "word": "spring",
+      "pos": "n.",
+      "zh": [
+        "春天"
+      ],
+      "tags": [
+        "u6",
+        "season"
+      ],
+      "emoji": "🌱",
+      "confusables": [
+        "summer",
+        "autumn",
+        "winter"
+      ]
+    },
+    {
+      "id": "pep4a_u6_sweater",
+      "word": "sweater",
+      "pos": "n.",
+      "zh": [
+        "毛衣"
+      ],
+      "tags": [
+        "u6",
+        "clothes"
+      ],
+      "confusables": [
+        "coat",
+        "shirt",
+        "T-shirt"
+      ]
+    },
+    {
+      "id": "pep4a_u6_summer",
+      "word": "summer",
+      "pos": "n.",
+      "zh": [
+        "夏天"
+      ],
+      "tags": [
+        "u6",
+        "season"
+      ],
+      "emoji": "🏖️",
+      "confusables": [
+        "spring",
+        "autumn",
+        "winter"
+      ]
+    },
+    {
+      "id": "pep4a_u6_sock",
+      "word": "sock",
+      "pos": "n.",
+      "zh": [
+        "短袜"
+      ],
+      "tags": [
+        "u6",
+        "clothes"
+      ],
+      "emoji": "🧦",
+      "confusables": [
+        "glove",
+        "coat",
+        "shirt"
+      ]
+    },
+    {
+      "id": "pep4a_u6_autumn",
+      "word": "autumn",
+      "pos": "n.",
+      "zh": [
+        "秋天"
+      ],
+      "tags": [
+        "u6",
+        "season"
+      ],
+      "emoji": "🍁",
+      "confusables": [
+        "spring",
+        "summer",
+        "winter"
+      ]
+    },
+    {
+      "id": "pep4a_u6_mine",
+      "word": "mine",
+      "pos": "pron.",
+      "zh": [
+        "我的"
+      ],
+      "tags": [
+        "u6",
+        "pronoun"
+      ],
+      "confusables": [
+        "whose",
+        "his",
+        "their"
+      ]
+    },
+    {
+      "id": "pep4a_u6_tshirt",
+      "word": "T-shirt",
+      "pos": "n.",
+      "zh": [
+        "T恤衫"
+      ],
+      "tags": [
+        "u6",
+        "clothes"
+      ],
+      "emoji": "👕",
+      "confusables": [
+        "shirt",
+        "dress",
+        "coat"
+      ]
+    },
+    {
+      "id": "pep4a_u6_wear",
+      "word": "wear",
+      "pos": "v.",
+      "zh": [
+        "穿;戴"
+      ],
+      "tags": [
+        "u6",
+        "action"
+      ],
+      "confusables": [
+        "dress",
+        "coat",
+        "glove"
+      ]
+    },
+    {
+      "id": "pep4a_u6_fall",
+      "word": "fall",
+      "pos": "v.",
+      "zh": [
+        "落下"
+      ],
+      "tags": [
+        "u6",
+        "action"
+      ],
+      "confusables": [
+        "snow",
+        "leaf",
+        "autumn"
+      ]
+    },
+    {
+      "id": "pep4a_u6_shirt",
+      "word": "shirt",
+      "pos": "n.",
+      "zh": [
+        "衬衫"
+      ],
+      "tags": [
+        "u6",
+        "clothes"
+      ],
+      "emoji": "👔",
+      "confusables": [
+        "T-shirt",
+        "dress",
+        "coat"
+      ]
+    },
+    {
+      "id": "pep4a_u6_leaf",
+      "word": "leaf",
+      "pos": "n.",
+      "zh": [
+        "叶"
+      ],
+      "tags": [
+        "u6",
+        "plant"
+      ],
+      "emoji": "🍃",
+      "confusables": [
+        "fall",
+        "autumn"
+      ]
+    },
+    {
+      "id": "pep4a_u6_coat",
+      "word": "coat",
+      "pos": "n.",
+      "zh": [
+        "大衣;外套"
+      ],
+      "tags": [
+        "u6",
+        "clothes"
+      ],
+      "emoji": "🧥",
+      "confusables": [
+        "sweater",
+        "shirt",
+        "T-shirt"
+      ]
+    },
+    {
+      "id": "pep4a_u6_glove",
+      "word": "glove",
+      "pos": "n.",
+      "zh": [
+        "手套"
+      ],
+      "tags": [
+        "u6",
+        "clothes"
+      ],
+      "emoji": "🧤",
+      "confusables": [
+        "sock",
+        "coat"
+      ]
+    },
+    {
+      "id": "pep4a_u6_dress",
+      "word": "dress",
+      "pos": "n.",
+      "zh": [
+        "连衣裙"
+      ],
+      "tags": [
+        "u6",
+        "clothes"
+      ],
+      "emoji": "👗",
+      "confusables": [
+        "shirt",
+        "T-shirt",
+        "coat"
+      ]
+    },
+    {
+      "id": "pep4a_u6_then",
+      "word": "then",
+      "pos": "adv.",
+      "zh": [
+        "然后;那时"
+      ],
+      "tags": [
+        "u6"
+      ],
+      "confusables": [
+        "now",
+        "always",
+        "afternoon"
+      ]
+    },
+    {
+      "id": "pep4a_u6_which",
+      "word": "which",
+      "pos": "det.",
+      "zh": [
+        "哪一个;哪一些"
+      ],
+      "tags": [
+        "u6",
+        "pronoun"
+      ],
+      "confusables": [
+        "whose",
+        "mine",
+        "why"
+      ]
+    },
+    {
+      "id": "pep4a_u6_season",
+      "word": "season",
+      "pos": "n.",
+      "zh": [
+        "季节"
+      ],
+      "tags": [
+        "u6",
+        "season"
+      ],
+      "confusables": [
+        "spring",
+        "summer",
+        "autumn"
+      ]
+    },
+    {
+      "id": "pep4a_u6_winter",
+      "word": "winter",
+      "pos": "n.",
+      "zh": [
+        "冬天"
+      ],
+      "tags": [
+        "u6",
+        "season"
+      ],
+      "confusables": [
+        "spring",
+        "summer",
+        "autumn"
+      ]
+    }
+  ]
+}

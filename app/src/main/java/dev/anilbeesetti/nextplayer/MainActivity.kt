@@ -15,8 +15,11 @@ import androidx.compose.animation.slideInVertically
 import androidx.compose.animation.slideOutVertically
 import androidx.compose.foundation.focusGroup
 import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.WindowInsetsSides
 import androidx.compose.foundation.layout.calculateStartPadding
@@ -24,11 +27,18 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.displayCutout
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material3.Button
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.adaptive.currentWindowAdaptiveInfoV2
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
@@ -49,6 +59,7 @@ import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.platform.LocalLayoutDirection
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.fragment.app.FragmentActivity
@@ -61,9 +72,14 @@ import androidx.window.core.layout.WindowSizeClass
 import com.google.accompanist.permissions.ExperimentalPermissionsApi
 import dev.anilbeesetti.nextplayer.core.common.extensions.isTelevision
 import dev.anilbeesetti.nextplayer.core.common.service.system.SystemService
+import dev.anilbeesetti.nextplayer.core.data.repository.UpdateManager
 import dev.anilbeesetti.nextplayer.core.media.services.MediaOperationsService
 import dev.anilbeesetti.nextplayer.core.model.ThemeConfig
+import dev.anilbeesetti.nextplayer.core.model.UpdateInfo
+import dev.anilbeesetti.nextplayer.core.model.UpdateUiState
+import dev.anilbeesetti.nextplayer.core.ui.R
 import dev.anilbeesetti.nextplayer.core.ui.components.LocalNavigationBottomPadding
+import dev.anilbeesetti.nextplayer.core.ui.components.UpdateDialog
 import dev.anilbeesetti.nextplayer.core.ui.components.LocalTopLevelBottomBarVisibleSetter
 import dev.anilbeesetti.nextplayer.core.ui.components.LocalTopLevelFabSetter
 import dev.anilbeesetti.nextplayer.core.ui.components.TopLevelFabState
@@ -91,6 +107,8 @@ class MainActivity : FragmentActivity() {
     private val systemService: SystemService by inject()
 
     private val viewModel: MainViewModel by viewModel()
+
+    private val updateManager: UpdateManager by inject()
 
     private var pendingPlaylistId by mutableStateOf<Long?>(null)
 
@@ -165,11 +183,12 @@ class MainActivity : FragmentActivity() {
 
                     val topLevelFabStates = remember { mutableStateMapOf<String, TopLevelFabState>() }
                     var showTopLevelBottomBar by remember { mutableStateOf(true) }
-                    NavigationLayout(
-                        state = navState,
-                        fabStates = topLevelFabStates,
-                        showBottomBar = showTopLevelBottomBar,
-                    ) { layoutPaddingValues ->
+                    Box(modifier = Modifier.fillMaxSize()) {
+                        NavigationLayout(
+                            state = navState,
+                            fabStates = topLevelFabStates,
+                            showBottomBar = showTopLevelBottomBar,
+                        ) { layoutPaddingValues ->
                         val railPadding = layoutPaddingValues.calculateStartPadding(LocalLayoutDirection.current)
                         val navigationInsetsDecorator = remember(navState, railPadding) {
                             NavEntryDecorator<NavKey> { entry ->
@@ -203,6 +222,40 @@ class MainActivity : FragmentActivity() {
                                 predictivePopTransitionSpec = { navState.navigationTransition(initialState, targetState) },
                             )
                         }
+                    }
+
+                    // 启动更新提醒：非模态 banner + 正式对话框，都由 UpdateManager 统一驱动；
+                    // 检查在后台跑，UI 线程绝不等待 Cloudflare，慢网络超时也只是不弹，不卡程序。
+                    val updateUiState by updateManager.uiState.collectAsStateWithLifecycle()
+                    val updateDialogVisible by updateManager.dialogVisible.collectAsStateWithLifecycle()
+                    val updateBannerVisible by updateManager.bannerVisible.collectAsStateWithLifecycle()
+
+                    AnimatedVisibility(
+                        visible = updateBannerVisible,
+                        modifier = Modifier.align(Alignment.BottomCenter),
+                        enter = fadeIn() + slideInVertically { it / 2 },
+                        exit = fadeOut() + slideOutVertically { it / 2 },
+                    ) {
+                        (updateUiState as? UpdateUiState.Available)?.let { info ->
+                            UpdateReminderBanner(
+                                info = info.info,
+                                onUpdate = updateManager::openDialog,
+                                onLater = updateManager::dismissBanner,
+                            )
+                        }
+                    }
+
+                    AnimatedVisibility(
+                        visible = updateDialogVisible && updateUiState !is UpdateUiState.Idle,
+                        modifier = Modifier.align(Alignment.Center),
+                    ) {
+                        UpdateDialog(
+                            state = updateUiState,
+                            onConfirm = updateManager::confirmUpdate,
+                            onDismiss = updateManager::closeDialog,
+                            onOpenInstallSettings = updateManager::openInstallSettings,
+                        )
+                    }
                     }
                 }
             }
@@ -327,4 +380,55 @@ fun shouldUseDynamicTheming(
 ): Boolean = when (state) {
     MainActivityUiState.Loading -> false
     is MainActivityUiState.Success -> state.preferences.useDynamicColors
+}
+
+/**
+ * 启动更新提醒 banner：非模态，浮在底部（不会盖住导航栏、不拦截其它点击）。
+ * 仅提示「有更新」，用户点「立即更新」才打开正式对话框，点「稍后」本次启动不再弹。
+ */
+@Composable
+private fun UpdateReminderBanner(
+    info: UpdateInfo,
+    onUpdate: () -> Unit,
+    onLater: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val mb = info.sizeBytes / 1024f / 1024f
+    Card(
+        modifier = modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .navigationBarsPadding(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
+        elevation = CardDefaults.cardElevation(defaultElevation = 6.dp),
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 16.dp, vertical = 12.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = stringResource(R.string.update_available_title, info.versionName),
+                    style = MaterialTheme.typography.titleSmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+                Text(
+                    text = stringResource(R.string.update_size, "%.1f".format(mb)),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+            TextButton(onClick = onLater) {
+                Text(
+                    text = stringResource(R.string.update_later),
+                    color = MaterialTheme.colorScheme.onPrimaryContainer,
+                )
+            }
+            Button(onClick = onUpdate) {
+                Text(text = stringResource(R.string.update_now))
+            }
+        }
+    }
 }
