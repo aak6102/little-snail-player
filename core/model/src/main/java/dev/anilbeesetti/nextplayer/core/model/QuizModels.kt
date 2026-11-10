@@ -86,6 +86,17 @@ data class QuizBank(
      */
     val levels: List<QuizLevelInfo> = emptyList(),
     val words: List<QuizWord> = emptyList(),
+    /**
+     * 是否为「内置基础包」：只含起步 / 进阶两档的词，其余档位靠云端内容包补齐。
+     *
+     * [levels] 仍然保留全五档 —— 那是产品目录，不是内容清单。家长设置页要看到
+     * 「起步 / 进阶 / 小学 / 初中 / 高中」五个选项，而不是「怎么只剩两档」。
+     *
+     * 消费端只需要用它决定一件事：要不要显示「更新词库」提示。
+     * **绝不能**用它改变出题规则：档位过滤本来就按 [QuizWord.level] 走，
+     * 缺哪一档的词，池子里自然就没有哪一档。
+     */
+    val baseOnly: Boolean = false,
 )
 
 /** 词表自带的档位说明，对应 `five_levels.json` 的 levels 数组。 */

@@ -212,8 +212,11 @@ data class StudyPreferences(
          * 默认词表：课标五档。
          *
          * 旧存档里存的是 `core_words` / `kebiao_primary`，它们已从 index.json 移除，
-         * [dev.anilbeesetti.nextplayer.core.data.repository.QuizBankRepository.bank] 会回落到这张表——
-         * 文件仍在包内，只为老统计能翻出释义，不再参与出题。
+         * [dev.anilbeesetti.nextplayer.core.data.repository.QuizBankRepository.bank] 会回落到这张表。
+         *
+         * v1.19.0 起这两个文件也从包内删除了：`kebiao_primary.json` 就是完整的
+         * 小学 505 词，留着等于把三档付费内容白送出去，词库云化也就白做了。
+         * 代价是老统计里属于这两套词表的记录会退化成裸的英文 key —— 可接受。
          */
         const val DEFAULT_BANK_ID = "kebiao_five"
 

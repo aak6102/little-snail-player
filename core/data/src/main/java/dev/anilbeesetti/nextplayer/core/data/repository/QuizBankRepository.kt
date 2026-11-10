@@ -11,8 +11,12 @@ import dev.anilbeesetti.nextplayer.core.model.QuizWord
 import org.koin.core.annotation.Single
 
 /**
- * 题库加载器。题库以 assets 形式随包分发：
- * 断网也能出题，无需外部接口与 API Key，也不会出现运行时内容失控。
+ * 题库加载器。词库有两份来源，**同一套格式、同一个文件名**：
+ *  - 内置包（assets）：只含起步 / 进阶共 220 词，保证装完就能答题、断网不空白；
+ *  - 云端包（[ContentPackRepository] 落盘）：完整五档 3076 词，解锁后自动更新。
+ *
+ * 加载顺序固定为「云端包 → 内置包」，任一步失败都静默回落：
+ * 一个坏下载不该让孩子打不开答题页。
  *
  * 放在 core:data 而不是 feature:player，是因为家长端的「学习报告」也要
  * 把统计里的词面拿来显示释义；settings 模块拿不到 player 模块的类。
@@ -23,7 +27,10 @@ import org.koin.core.annotation.Single
  * 而仓库层又需要题库来做进度主键迁移，会形成循环依赖。
  */
 @Single
-class QuizBankRepository(private val context: Context) {
+class QuizBankRepository(
+    private val context: Context,
+    private val contentPackRepository: ContentPackRepository,
+) {
 
     private val lock = Any()
 
@@ -35,8 +42,27 @@ class QuizBankRepository(private val context: Context) {
 
     private var indexCache: QuizBankIndex? = null
 
+    /** 缓存建立时的内容包版本。版本一变（下载完成 / 被丢弃），所有缓存立刻作废。 */
+    private var cacheVersion = -1
+
+    /**
+     * 内容包换了就清缓存。
+     *
+     * 不清的话，用户点完「更新词库」回到答题页，出来的还是那 220 个词 ——
+     * 明明已经下载成功却看着像失败。
+     */
+    private fun ensureCacheFresh() {
+        val version = runCatching { contentPackRepository.installedVersion() }.getOrDefault(0)
+        if (version == cacheVersion) return
+        cacheVersion = version
+        bankCache.clear()
+        assetCache.clear()
+        indexCache = null
+    }
+
     /** 词表清单。读不到或内容为空时回落到内置词表，避免学习模式因一个坏文件而静默失效。 */
     fun index(): QuizBankIndex = synchronized(lock) {
+        ensureCacheFresh()
         indexCache ?: readIndex().also { indexCache = it }
     }
 
@@ -52,6 +78,7 @@ class QuizBankRepository(private val context: Context) {
      * 连默认都读不出来才返回空题库——此时出题端会跳过拦截，而不是把孩子锁在答题页。
      */
     fun bank(bankId: String): QuizBank = synchronized(lock) {
+        ensureCacheFresh()
         val requested = bankId.ifBlank { defaultBankId() }
         bankCache.getOrPut(requested) { readBank(requested) }
     }
@@ -65,6 +92,7 @@ class QuizBankRepository(private val context: Context) {
      * @param preferredBankId 同拼写冲突时优先采用哪套词表的释义。
      */
     fun wordsByStatKey(preferredBankId: String): Map<String, QuizWord> = synchronized(lock) {
+        ensureCacheFresh()
         val preferred = bank(preferredBankId).words
         // 同 wordsByIdAcrossBanks：换过词表的历史记录也要能翻出释义，
         // 否则报告页里那些词会退化成裸的英文 key。
@@ -94,6 +122,7 @@ class QuizBankRepository(private val context: Context) {
      * 迁移是一次性的，多解析几个文件的代价可以忽略。
      */
     fun wordsByIdAcrossBanks(): Map<String, QuizWord> = synchronized(lock) {
+        ensureCacheFresh()
         (index().banks.map { it.file } + bankFileNames())
             .distinct()
             .flatMap { file -> readAsset(file, file).words }
@@ -109,18 +138,38 @@ class QuizBankRepository(private val context: Context) {
     }
 
     private fun readAsset(fileName: String, bankId: String): QuizBank = synchronized(lock) {
+        ensureCacheFresh()
         // 五档词表有 3076 词、370KB，报告页每次刷新都要跨词表反查一遍；
         // 不缓存的话每答一题就重新解析几百 KB，纯属白烧电
         assetCache.getOrPut(fileName) {
-            runCatching {
-                context.assets.open("$ASSET_DIR/$fileName").bufferedReader().use { reader ->
-                    QuizBankParser.parse(reader.readText())
-                }
-            }.getOrElse { error ->
-                Log.e(TAG, "词表 $bankId 读取失败，退化为空题库", error)
-                QuizBank()
-            }
+            readFromPack(fileName, bankId) ?: readFromAssets(fileName, bankId)
         }
+    }
+
+    /**
+     * 云端包优先。
+     *
+     * 解析失败时**主动丢弃**这个包：换成一个坏文件的话，每台设备都会永久
+     * 退回内置包，而用户以为更新成功了。丢掉它下次冷启动会重新拉一份。
+     */
+    private fun readFromPack(fileName: String, bankId: String): QuizBank? {
+        val file = runCatching { contentPackRepository.installedFile(fileName) }.getOrNull() ?: return null
+        return runCatching {
+            QuizBankParser.parse(file.readText())
+        }.getOrElse { error ->
+            Log.e(TAG, "云端词库 $fileName 解析失败，丢弃并回落到内置包", error)
+            runCatching { contentPackRepository.discardInstalled() }
+            null
+        }
+    }
+
+    private fun readFromAssets(fileName: String, bankId: String): QuizBank = runCatching {
+        context.assets.open("$ASSET_DIR/$fileName").bufferedReader().use { reader ->
+            QuizBankParser.parse(reader.readText())
+        }
+    }.getOrElse { error ->
+        Log.e(TAG, "词表 $bankId 读取失败，退化为空题库", error)
+        QuizBank()
     }
 
     private fun readIndex(): QuizBankIndex {

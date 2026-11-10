@@ -26,6 +26,13 @@ interface LicenseRepository {
     /** 设备码（16 位小写 hex），用于换绑与售后。 */
     val deviceId: String
 
+    /**
+     * 会话凭证，续签与内容包下载用它证明「我就是这台设备」。
+     *
+     * 未授权（只有试用）时为空串——试用设备没有 token，服务端按设备码 + 试用状态放行。
+     */
+    val token: String
+
     /** 售后邮箱，由服务端下发；未同步到时为空。 */
     val contactEmail: String
 

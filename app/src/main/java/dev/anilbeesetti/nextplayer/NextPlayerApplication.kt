@@ -6,6 +6,7 @@ import coil3.PlatformContext
 import coil3.SingletonImageLoader
 import dev.anilbeesetti.nextplayer.core.common.Logger
 import dev.anilbeesetti.nextplayer.core.common.di.DiQualifiers
+import dev.anilbeesetti.nextplayer.core.data.repository.ContentPackRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.NetworkConnectionRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.UpdateManager
 import dev.anilbeesetti.nextplayer.core.media.network.keys.SshKeyStore
@@ -34,6 +35,8 @@ class NextPlayerApplication :
 
     private val updateManager: UpdateManager by inject()
 
+    private val contentPackRepository: ContentPackRepository by inject()
+
     override fun onCreate() {
         super.onCreate()
         startKoin<NextPlayerApplication> {
@@ -43,6 +46,9 @@ class NextPlayerApplication :
         // 启动后在后台自动检查更新：非阻塞、慢网络超时即放弃（fail-open），不会卡住首屏。
         // 真正的提醒 banner / 对话框由 MainActivity 监听 UpdateManager 状态渲染。
         updateManager.checkOnStartup()
+        // 词库内容包同一套思路：已解锁才去拉完整五档，未解锁一次请求都不发。
+        // 放在 Application 而不是仓储构造函数里，是为了让测试构造题库时不联网。
+        contentPackRepository.startAutoSync()
         Thread.setDefaultUncaughtExceptionHandler(GlobalExceptionHandler(applicationContext, CrashActivity::class.java))
         applicationScope.launch {
             runCatching {

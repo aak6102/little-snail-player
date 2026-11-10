@@ -173,6 +173,10 @@ class QuizBankIntegrityTest {
     /**
      * 元数据里的四个数字都是给家长看的，写错不会崩，只会让设置页撒谎。
      * 所以从词表内容重新数一遍，而不是信任 JSON 里填的值。
+     *
+     * 内置基础包也适用这条：它只带起步 / 进阶两档的词，那三档的
+     * `cumulativeCount` 就必须如实写成 220，而不是完整版的 3076 ——
+     * 否则家长选了「高中」看到「出题范围 3076 词」，实际只在 220 个词里转。
      */
     @Test
     fun `档位元数据与词表内容一致`() {
@@ -187,6 +191,23 @@ class QuizBankIntegrityTest {
                 assertEquals("${level.name} 累计词数", cumulative, level.cumulativeCount)
                 assertEquals("${level.name} 可出题词数", playable, level.quizWordCount)
             }
+        }
+    }
+
+    /**
+     * 内置包不能把档位目录一起裁掉。
+     *
+     * 设置页是按 [QuizBank.levels] 渲染选项的，缺档位等于家长看到「高中」凭空消失；
+     * 更糟的是默认档位是小学（3），目录里没有 3 的话，一进设置页就是个空档位。
+     */
+    @Test
+    fun `内置基础包保留完整档位目录`() {
+        banksWithLevels().filter { (_, bank) -> bank.baseOnly }.forEach { (info, bank) ->
+            assertEquals(
+                "${info.id} 是内置基础包，档位目录不能裁",
+                StudyPreferences.ALLOWED_LEVELS,
+                bank.levels.map { it.level },
+            )
         }
     }
 

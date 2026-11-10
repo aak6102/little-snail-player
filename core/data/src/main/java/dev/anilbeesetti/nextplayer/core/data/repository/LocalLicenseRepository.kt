@@ -79,6 +79,13 @@ class LocalLicenseRepository(
     override val deviceId: String
         get() = cachedDeviceId
 
+    /**
+     * 会话凭证。与 [latest] 同源，不额外读取 DataStore —— 内容包下载是低频操作，
+     * 读一次磁盘的代价可以忽略，但保持与票据同一份快照能避免「票是新设备、token 是旧设备」。
+     */
+    override val token: String
+        get() = latest.token
+
     /** 缓一次验签结果：QuizGate 每秒都会问一次，不能每秒做一次 RSA。 */
     @Volatile
     private var verifiedTicket: String? = null

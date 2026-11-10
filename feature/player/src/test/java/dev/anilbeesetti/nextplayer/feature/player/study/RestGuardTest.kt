@@ -1,5 +1,6 @@
 package dev.anilbeesetti.nextplayer.feature.player.study
 
+import dev.anilbeesetti.nextplayer.core.data.repository.ContentPackRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.FakeLicenseRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.FakeRestRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.FakeStudyRepository
@@ -37,6 +38,18 @@ class RestGuardTest {
 
     private val app get() = RuntimeEnvironment.getApplication()
 
+    /**
+     * 内容包仓储的空壳实例。
+     *
+     * 它只在 [QuizBankRepository] 读词表时被问一句「本地有没有更新的包」；
+     * 联网同步由 Application 显式启动，测试不调，所以这里不会产生任何网络行为。
+     */
+    private fun contentPack(context: android.content.Context) = ContentPackRepository(
+        FakeLicenseRepository(pro = true),
+        context,
+        CoroutineScope(Dispatchers.Unconfined),
+    )
+
     /** 构造一套自包含的防沉迷环境。 */
     private fun build(enabled: Boolean = true): Triple<RestGuard, QuizGate, FakeRestRepository> {
         val repo = FakeRestRepository()
@@ -44,7 +57,7 @@ class RestGuardTest {
         val license = FakeLicenseRepository(pro = true)
         val quizGate = QuizGate(
             FakeStudyRepository(),
-            QuizBankRepository(app),
+            QuizBankRepository(app, contentPack(app)),
             license,
             CoroutineScope(Dispatchers.Unconfined),
         )
@@ -136,7 +149,7 @@ class RestGuardTest {
         val license = FakeLicenseRepository(pro = true)
         val guard = RestGuard(
             repo,
-            QuizGate(FakeStudyRepository(), QuizBankRepository(app), license, CoroutineScope(Dispatchers.Unconfined)),
+            QuizGate(FakeStudyRepository(), QuizBankRepository(app, contentPack(app)), license, CoroutineScope(Dispatchers.Unconfined)),
             license,
             CoroutineScope(Dispatchers.Unconfined),
         )

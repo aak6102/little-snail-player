@@ -349,6 +349,52 @@ private fun ParentPreferencesScreenContent(
                                 },
                             )
                         }
+                        if (state.wordPackBaseOnly) {
+                            item {
+                                // 内置包只有起步 / 进阶两档的词，而档位列表照旧显示五档。
+                                // 不说清楚的话，家长选了「高中」却发现题目一直在重复小学词，
+                                // 只会觉得词库坏了 —— 这里给一行来源说明和一个更新入口。
+                                Column(
+                                    modifier = Modifier
+                                        .fillMaxWidth()
+                                        .padding(horizontal = 24.dp, vertical = 10.dp),
+                                ) {
+                                    Text(
+                                        text = stringResource(R.string.word_pack_base_only),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    )
+                                    if (state.wordPack.error.isNotBlank()) {
+                                        Text(
+                                            text = state.wordPack.error,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.error,
+                                            modifier = Modifier.padding(top = 6.dp),
+                                        )
+                                    } else if (state.wordPack.message.isNotBlank()) {
+                                        Text(
+                                            text = state.wordPack.message,
+                                            style = MaterialTheme.typography.bodySmall,
+                                            color = MaterialTheme.colorScheme.primary,
+                                            modifier = Modifier.padding(top = 6.dp),
+                                        )
+                                    }
+                                    TextButton(
+                                        onClick = { onAction(ParentPreferencesUiEvent.UpdateWordPack) },
+                                        enabled = !state.wordPack.busy,
+                                        modifier = Modifier.padding(top = 2.dp),
+                                    ) {
+                                        Text(
+                                            text = if (state.wordPack.busy) {
+                                                stringResource(R.string.word_pack_updating)
+                                            } else {
+                                                stringResource(R.string.word_pack_update)
+                                            },
+                                        )
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
 

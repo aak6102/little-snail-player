@@ -593,6 +593,10 @@
     <string name="study_level_value_downgraded" translatable="false">%1$s · 出题范围 %2$d 词（现在按 %3$s 出题）</string>
     <string name="study_level_option" translatable="false">%1$s（%2$d 词）</string>
     <string name="study_level_hint" translatable="false">档位是出题上限：选初中时，起步到初中的词都会考，但不会考高中词。连续答错会自动降一档，连续答对再升回来。</string>
+    <string name="word_pack_base_only" translatable="false">当前为内置基础词库（起步 + 进阶）。小学、初中、高中三档需要联网更新词库后才会出现在出题池里。</string>
+    <string name="word_pack_update" translatable="false">更新词库</string>
+    <string name="word_pack_updating" translatable="false">正在更新词库…</string>
+    <string name="word_pack_ready" translatable="false">完整词库已就绪（v%1$d）</string>
     <string name="study_bank" translatable="false">词表</string>
     <string name="study_bank_value" translatable="false">%1$s · %2$d 词</string>
     <string name="study_bank_option" translatable="false">%1$s（%2$d 词）</string>

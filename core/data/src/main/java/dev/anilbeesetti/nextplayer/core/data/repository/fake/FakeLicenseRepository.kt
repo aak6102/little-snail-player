@@ -31,6 +31,9 @@ class FakeLicenseRepository(
 
     override val deviceId: String = initialDeviceId
 
+    /** 内容包接口会带它；测试里给非空值即可，服务端校验在集成测试里覆盖 */
+    override val token: String = "TESTTOKEN"
+
     override val contactEmail: String = "test@example.com"
 
     override fun statusNow(): LicenseStatus = _status.value

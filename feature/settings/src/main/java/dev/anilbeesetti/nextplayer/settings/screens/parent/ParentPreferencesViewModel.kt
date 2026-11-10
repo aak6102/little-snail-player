@@ -2,10 +2,12 @@ package dev.anilbeesetti.nextplayer.settings.screens.parent
 
 import androidx.lifecycle.viewModelScope
 import dev.anilbeesetti.nextplayer.core.data.license.LicenseApi
+import dev.anilbeesetti.nextplayer.core.data.repository.ContentPackRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.LicenseRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.QuizBankRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.RestRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.StudyRepository
+import dev.anilbeesetti.nextplayer.core.model.ContentPackState
 import dev.anilbeesetti.nextplayer.core.model.LicenseStatus
 import dev.anilbeesetti.nextplayer.core.model.QuizLevelInfo
 import dev.anilbeesetti.nextplayer.core.model.RestPreferences
@@ -42,6 +44,7 @@ class ParentPreferencesViewModel(
     private val studyRepository: StudyRepository,
     private val quizBankRepository: QuizBankRepository,
     private val licenseRepository: LicenseRepository,
+    private val contentPackRepository: ContentPackRepository,
     private val restRepository: RestRepository,
     @InjectedParam internal var output: Output,
 ) : MviViewModel<ParentPreferencesUiState, ParentPreferencesUiEvent>() {
@@ -73,12 +76,44 @@ class ParentPreferencesViewModel(
             licenseRepository.status.collect(::publishLicense)
         }
         // 档位元数据要读 assets，放到 IO 线程；只加载一次，切换档位不改变清单本身
-        viewModelScope.launch(Dispatchers.IO) {
-            val levels = quizBankRepository.bank(quizBankRepository.defaultBankId()).levels
-            stateInternal.update { it.copy(levels = levels) }
+        reloadLevels()
+        viewModelScope.launch {
+            contentPackRepository.state.collect { pack ->
+                stateInternal.update { it.copy(wordPack = pack) }
+                // 下载完成后词表已经换了内容，档位与词数要重读一遍；
+                // 不重读的话，用户点完「更新词库」回来看到的还是那 220 词
+                if (pack.installedVersion != lastPackVersion) {
+                    lastPackVersion = pack.installedVersion
+                    reloadLevels()
+                }
+            }
         }
         // 进页面顺手校准一次：失败无提示，只影响授权页显示的「剩余天数」精度
         viewModelScope.launch { licenseRepository.refresh() }
+    }
+
+    /** 记住上一次看到的包版本，用来判断「是不是刚更新完」 */
+    private var lastPackVersion = -1
+
+    /**
+     * 重读词表元数据。
+     *
+     * [QuizBankRepository] 内部会按内容包版本自动清缓存，所以这里直接读就是最新的。
+     */
+    private fun reloadLevels() {
+        viewModelScope.launch(Dispatchers.IO) {
+            val bank = quizBankRepository.bank(quizBankRepository.defaultBankId())
+            stateInternal.update {
+                it.copy(levels = bank.levels, wordPackBaseOnly = bank.baseOnly)
+            }
+        }
+    }
+
+    /** 家长手动点「更新词库」。失败要能看到原因，所以 reportErrors = true。 */
+    private fun updateWordPack() {
+        viewModelScope.launch {
+            contentPackRepository.sync(reportErrors = true)
+        }
     }
 
     override fun onAction(action: ParentPreferencesUiEvent) {
@@ -99,6 +134,7 @@ class ParentPreferencesViewModel(
             ParentPreferencesUiEvent.OpenSeekIntervalOptions -> openSeekIntervalOptions()
             ParentPreferencesUiEvent.OpenLevelOptions ->
                 showDialog(ParentPreferencesDialog.LevelOptions)
+            ParentPreferencesUiEvent.UpdateWordPack -> updateWordPack()
 
             ParentPreferencesUiEvent.OpenWindowOptions ->
                 showDialog(ParentPreferencesDialog.WindowOptions)
@@ -608,6 +644,15 @@ data class ParentPreferencesUiState(
     val effectiveLevel: Int = StudyPreferences.DEFAULT_LEVEL,
     /** 可选档位，来自五档词表；加载完成前为空。 */
     val levels: List<QuizLevelInfo> = emptyList(),
+    /**
+     * 当前词表是否只含内置的基础两档（起步 / 进阶）。
+     *
+     * 用来在档位选择器里提示「完整五档需联网更新」，而不是默默让家长
+     * 选了高中却只能刷到 220 个词。
+     */
+    val wordPackBaseOnly: Boolean = false,
+    /** 云端完整词库的安装状态，见 [ContentPackState]。 */
+    val wordPack: ContentPackState = ContentPackState(),
     val todayAnswered: Int = 0,
     val todayCorrect: Int = 0,
     val showDialog: ParentPreferencesDialog? = null,
@@ -739,6 +784,9 @@ sealed interface ParentPreferencesUiEvent {
     data object OpenQuestionsOptions : ParentPreferencesUiEvent
     data object OpenSeekIntervalOptions : ParentPreferencesUiEvent
     data object OpenLevelOptions : ParentPreferencesUiEvent
+
+    /** 家长手动点「更新词库」，联网拉取完整五档词库包 */
+    data object UpdateWordPack : ParentPreferencesUiEvent
 
     // ---- 防沉迷（休息） ----
     data object ToggleRestMode : ParentPreferencesUiEvent
