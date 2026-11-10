@@ -60,6 +60,18 @@ data class LicenseData(
     val lastSyncAtMs: Long = 0L,
     /** 服务端时间与本地时间的差值（毫秒）。正数表示本地慢了 */
     val clockSkewMs: Long = 0L,
+    /**
+     * 0 元体验包是否已经领过。
+     *
+     * 服务端才是最终裁判（同一台设备只发一次），这里只是缓存结论，
+     * 免得重装或冷启动后还摆一个点了必然失败的入口。
+     */
+    val trialPackClaimed: Boolean = false,
+    /**
+     * 服务端下发的体验包天数，只用于文案（「0 元领 N 天体验」）。
+     * 权限不看它——票据里写几天就是几天。
+     */
+    val trialPackDays: Int = 0,
 )
 
 /**
@@ -83,6 +95,12 @@ data class LicenseStatus(
     val trialDaysLeft: Int = 0,
     /** 票据已过自身有效期：还能用，但要尽快联网续签 */
     val needsRefresh: Boolean = false,
+    /** 当前票据是不是 0 元体验包签发的（决定副标题怎么说，不影响任何权限） */
+    val fromTrialPack: Boolean = false,
+    /** 0 元体验包已经用掉了（领过、或老版本试用过），入口不该再出现 */
+    val trialPackUsed: Boolean = false,
+    /** 体验包天数，服务端下发，仅用于文案；0 表示未获取 */
+    val trialPackDays: Int = 0,
     /** 是否已解锁学习模式 */
     val pro: Boolean = false,
 ) {
@@ -90,10 +108,25 @@ data class LicenseStatus(
     val headline: String
         get() = when {
             permanent -> "永久版"
+            licensed && fromTrialPack -> "体验中，剩余 $remainingDays 天"
             licensed -> "已解锁（至 ${formatDate(expireAtMs)}）"
             trialActive -> "试用中，剩余 $trialDaysLeft 天"
             trialStarted -> "试用已结束"
             else -> "未解锁"
+        }
+
+    /**
+     * 票据内的剩余天数，向上取整。
+     *
+     * 与 [trialDaysLeft] 分开算：那个是从本地试用起点推的，这个是票据到期时刻，
+     * 体验包走的是票据，两者混用会出现「刚领完就显示剩 6 天」。
+     */
+    val remainingDays: Int
+        get() = if (expireAtMs <= 0L) {
+            0
+        } else {
+            val left = expireAtMs - System.currentTimeMillis()
+            if (left <= 0L) 0 else ((left + DAY_MS - 1) / DAY_MS).toInt().coerceAtLeast(1)
         }
 }
 
@@ -108,6 +141,14 @@ private fun formatDate(epochMs: Long): String {
 
 private const val DAY_MS = 24L * 60 * 60 * 1000
 private const val TICKET_SCHEMA_VERSION = 1
+
+/**
+ * 0 元体验包的套餐标识，与服务端 `models.ts` 的 `TRIAL_PLAN_KEY` 必须一致。
+ *
+ * 客户端只拿它判断「副标题该说体验还是说已解锁」，不参与任何权限判定——
+ * 权限一律看票据里的 exp / perm，服务端想换套餐标识不至于把用户锁在门外。
+ */
+const val TRIAL_PLAN_KEY = "trial_7d"
 
 /**
  * 由存盘数据 + 已验签票据算出当前结论。
@@ -139,6 +180,7 @@ fun LicenseData.computeStatus(nowMs: Long, payload: TicketPayload?): LicenseStat
     val expireAtMs = if (bound && payload.exp > 0L) payload.exp * 1000L else 0L
     val licensed = bound && (permanent || expireAtMs > effectiveNow)
     val needsRefresh = bound && payload.vu * 1000L <= effectiveNow
+    val fromTrialPack = bound && payload.plan == TRIAL_PLAN_KEY
 
     return LicenseStatus(
         deviceId = deviceId,
@@ -149,6 +191,11 @@ fun LicenseData.computeStatus(nowMs: Long, payload: TicketPayload?): LicenseStat
         trialStarted = trialStarted,
         trialDaysLeft = trialDaysLeft,
         needsRefresh = needsRefresh,
+        fromTrialPack = fromTrialPack,
+        // 三种情况都算「用掉了」：本版领过（落盘标记）、老版试用过（本地起点）、
+        // 手上这张票就是体验包签的（换机/重装后只有票据能证明领过）。
+        trialPackUsed = trialPackClaimed || trialStarted || fromTrialPack,
+        trialPackDays = trialPackDays,
         pro = licensed || trialActive,
     )
 }

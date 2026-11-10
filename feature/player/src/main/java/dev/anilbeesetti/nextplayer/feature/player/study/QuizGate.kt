@@ -73,11 +73,17 @@ class QuizGate(
     /** 本次拦截已经完成几题（答对，或错误路径放行）。 */
     private var sessionAnswered: Int = 0
 
-    /** 本次拦截是否出现过错误。这是「浮动解锁」的唯一判据。 */
-    private var sessionHadWrong: Boolean = false
-
     /** 本次拦截一次答对的题数，用于结果页展示。 */
-    private var sessionCorrectCount: Int = 0
+    private var sessionCleanCount: Int = 0
+
+    /**
+     * 本次拦截**真被扣分**的题数：只有「错满三次、看答案后放行」才计一次。
+     *
+     * 与 [sessionCleanCount] 分开是为了区分两种「没一次答对」：
+     * 排除法是主动缩小范围，不该罚时长；乱点到看答案才是没掌握。
+     * 时长折扣只看这个数，结果页的分数看 [sessionCleanCount]。
+     */
+    private var sessionPenaltyCount: Int = 0
 
     /**
      * 本次拦截开始时的降档数。
@@ -252,19 +258,20 @@ class QuizGate(
         // 先推进内存里的自适应计数，再记账：下一题的档位要立刻反映这次对错
         val maxLevel = studyRepository.preferences.activeLevelClamped
         adaptiveView = currentAdaptive(maxLevel).afterAnswer(correct, maxLevel)
-        if (!correct) sessionHadWrong = true
-        if (correct) sessionCorrectCount += 1
         /*
-         * 记账口径比「过关」严一档：本题点错过（选项被划掉过）就不算独立答对。
+         * 一次答对 = 本题没点错过。
          *
          * 早先只有「错满三次看答案后放行」才记错，于是「先点错一个、再点对」被当成
          * 已掌握——这个词既不进错词池，下一轮也不会优先复习，排除法就成了一条
-         * 免记账的捷径。改成留账之后，它仍要等下一轮独立答对才销账。
+         * 免记账的捷径。现在它照样进错词池、留欠账，仍要等下一轮独立答对才销账。
          *
-         * 但时长惩罚与自适应升降档不看这一档：它们衡量的是「这次是不是在乱点」。
-         * 排除法不是乱点，不该让孩子只剩 5 分钟，也不该因此被降档。
+         * 但时长折扣与自适应升降档只看「是否走到看答案」：
+         * 排除法是主动缩小范围，不是乱点，不该让孩子只剩 5 分钟，也不该因此被降档。
          */
-        recordAnswer(correct = correct && _state.value.attempt == 0)
+        val clean = correct && _state.value.attempt == 0
+        if (clean) sessionCleanCount += 1
+        if (!correct) sessionPenaltyCount += 1
+        recordAnswer(correct = clean)
         sessionAnswered += 1
         if (sessionAnswered >= sessionTotal) {
             // 疯狂模式：答完本轮立刻续播，不当作「学习轮次」给结果页——
@@ -283,8 +290,8 @@ class QuizGate(
         // 不再各自硬编码。题量只是从 1 变成 study 的 N，其余逻辑（无结果页、答完即续播）不变。
         sessionTotal = studyRepository.preferences.questionsPerLockClamped
         sessionAnswered = 0
-        sessionHadWrong = false
-        sessionCorrectCount = 0
+        sessionCleanCount = 0
+        sessionPenaltyCount = 0
         sessionSlots = planSlots(sessionTotal)
         sessionWordIds.clear()
         sessionStartOffset = currentAdaptive(studyRepository.preferences.activeLevelClamped).offset
@@ -345,24 +352,30 @@ class QuizGate(
         question?.let { rememberRecentWord(it.statKey) }
         question = null
 
-        val allCorrect = !sessionHadWrong
         val maxLevel = studyRepository.preferences.activeLevelClamped
         val prefs = studyRepository.preferences
-        // 错题数 = 本轮题量 − 一次答对的题数：两条错误路径（点错、错满三次放行）
-        // 都记在 sessionCorrectCount 之外，所以这个减法天然把它们算进去。
-        val wrongCount = sessionTotal - sessionCorrectCount
+        // 三档口径分开算，别混：
+        //   一次答对（clean）   — 没点错就选中，结果页的分数用它；
+        //   划掉后选对（elim）  — 用了排除法，记错但不扣时长；
+        //   看答案后放行（penalty）— 乱点到第三次，按题数打折。
+        val cleanCount = sessionCleanCount
+        val penalty = sessionPenaltyCount
+        val eliminated = (sessionTotal - cleanCount - penalty).coerceAtLeast(0)
+        // 时长不打折只代表「这次没乱点」，不代表全对：照样要如实说有几题用了排除法。
+        val fullTime = penalty == 0
         _state.value = QuizUiState(
             visible = true,
             summary = QuizSummary(
-                allCorrect = allCorrect,
-                nextMinutes = if (allCorrect) {
+                allCorrect = fullTime,
+                nextMinutes = if (fullTime) {
                     prefs.intervalMinutes
                 } else {
-                    prefs.unlockMinutesFor(wrongCount)
+                    prefs.unlockMinutesFor(penalty)
                 },
-                correctCount = sessionCorrectCount,
+                correctCount = cleanCount,
                 total = sessionTotal,
-                wrongCount = wrongCount,
+                wrongCount = penalty,
+                eliminatedCount = eliminated,
                 // 只告诉孩子「先练简单的」，不显示档位数字：
                 // 说了具体档位，孩子会去算「怎样才会被降档」，那就变成钻规则而不是学词
                 downgraded = currentAdaptive(maxLevel).offset > sessionStartOffset,
@@ -379,8 +392,8 @@ class QuizGate(
         elapsedMs = 0L
         sessionAnswered = 0
         sessionTotal = 1
-        sessionHadWrong = false
-        sessionCorrectCount = 0
+        sessionCleanCount = 0
+        sessionPenaltyCount = 0
         sessionWordIds.clear()
         _state.value = QuizUiState()
         scope.launch { studyRepository.setPendingLock(null) }
@@ -453,6 +466,8 @@ data class QuizSummary(
     val total: Int,
     /** 本轮没一次答对的题数，决定 [nextMinutes] 打几折。 */
     val wrongCount: Int = 0,
+    /** 其中「划掉一个错选项后才选对」的题数：记错但不打折，结果页要说出来。 */
+    val eliminatedCount: Int = 0,
     /** 当前处于降档状态：结果页给一句鼓励，而不是报档位。 */
     val downgraded: Boolean = false,
 )

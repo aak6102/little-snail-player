@@ -5,7 +5,23 @@ import dev.anilbeesetti.nextplayer.core.model.LicenseStatus
 import kotlinx.coroutines.flow.StateFlow
 
 /**
- * 授权与试用。
+ * 领取 0 元体验包的结果。
+ *
+ * 三种情况必须分开，因为家长看到的东西完全不同：
+ * 领到了（开关直接亮）、已经领过（该引导去买，不是骂他网络）、失败了（可以重试）。
+ */
+sealed interface ClaimResult {
+    data object Ok : ClaimResult
+
+    /** 这台设备已经领过（或已经买过），服务端拒绝再发一次。 */
+    data object AlreadyUsed : ClaimResult
+
+    /** 网络或服务端异常，本地没有拿到任何票据。 */
+    data class Failed(val message: String) : ClaimResult
+}
+
+/**
+ * 授权与体验包。
  *
  * 消费端只需要记住一件事：**[status] 是本地算出来的，不依赖网络**。
  * 冷启动不等待任何请求，界面 0ms 就能决定要不要锁学习模式。
@@ -44,16 +60,14 @@ interface LicenseRepository {
     suspend fun refresh(): Boolean
 
     /**
-     * 开始 7 天试用。
+     * 领取 0 元体验包（服务端一条价格 0、若干天的普通套餐）。
      *
-     * 失败时本地仍然按「已开始」处理（乐观更新）：家长点开关必须立刻有反应，
-     * 不能让一次超时把开关弹回去——那样第一道转化漏斗就漏了。
-     *
-     * @return **服务端是否已经记下这次试用**。返回 false 不代表试用没开始（本地已生效），
-     *   而是「云端还没这条记录」——调用方据此给家长一句可解释的提示，
-     *   下次冷启动或进入授权页时 bootstrap 会带着本地起点自动补报。
+     * 走的是**下单**链路而不是原来的「本地先开启、稍后补报」：
+     * 体验包发一张和付费完全一样的票据，没有票据就没有权限，
+     * 也就不存在「App 说在体验、后台查不到」这种对不上账的状态。
+     * 一台设备终身只能领一次，判定在服务端（见 `trialPackUsed`）。
      */
-    suspend fun startTrial(): Boolean
+    suspend fun claimTrialPack(): ClaimResult
 
     suspend fun createOrder(planKey: String): LicenseApi.Result<LicenseApi.PurchaseOrder>
 

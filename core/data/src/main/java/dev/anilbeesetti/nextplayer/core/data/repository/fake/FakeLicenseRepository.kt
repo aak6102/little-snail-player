@@ -40,15 +40,18 @@ class FakeLicenseRepository(
 
     override suspend fun refresh(): Boolean = true
 
-    override suspend fun startTrial(): Boolean {
-        if (_status.value.licensed) return true
+    override suspend fun claimTrialPack(): ClaimResult {
+        if (_status.value.licensed) return ClaimResult.AlreadyUsed
         _status.value = _status.value.copy(
-            trialStarted = true,
-            trialActive = true,
-            trialDaysLeft = 7,
+            licensed = true,
+            fromTrialPack = true,
             pro = true,
+            // 体验包也是票据，给一个到期时刻，免得 UI 文案算不出剩余天数
+            expireAtMs = System.currentTimeMillis() + 7L * 24 * 60 * 60 * 1000,
+            trialPackUsed = true,
+            trialPackDays = 7,
         )
-        return true
+        return ClaimResult.Ok
     }
 
     override suspend fun createOrder(planKey: String): LicenseApi.Result<LicenseApi.PurchaseOrder> =

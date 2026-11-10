@@ -270,8 +270,8 @@ private fun ParentPreferencesScreenContent(
 
         state.showDialog?.let { dialog ->
             when (dialog) {
-                ParentPreferencesDialog.StartTrial -> {
-                    StartTrialDialog(onAction = onAction)
+                ParentPreferencesDialog.ClaimTrialPack -> {
+                    ClaimTrialPackDialog(onAction = onAction)
                 }
 
                 ParentPreferencesDialog.IntervalOptions -> {

@@ -10,12 +10,12 @@ import dev.anilbeesetti.nextplayer.core.datastore.datasource.LicenseDataSource
 import dev.anilbeesetti.nextplayer.core.model.LicenseData
 import dev.anilbeesetti.nextplayer.core.model.LicenseStatus
 import dev.anilbeesetti.nextplayer.core.model.TicketPayload
+import dev.anilbeesetti.nextplayer.core.model.TRIAL_PLAN_KEY
 import dev.anilbeesetti.nextplayer.core.model.computeStatus
 import java.security.MessageDigest
 import java.util.UUID
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.NonCancellable
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -55,16 +55,8 @@ class LocalLicenseRepository(
          */
         private const val DEVICE_SALT = "snail-player-license-v1"
 
-        private const val DAY_MS = 24L * 60 * 60 * 1000
-
-        /** 与服务端 `TRIAL_DAYS` 对齐的本地兜底值，仅在乐观更新时使用。 */
-        private const val FALLBACK_TRIAL_DAYS = 7L
-
         /** 服务端没下发邮箱时的兜底，保证「发邮件」按钮永远可点。 */
-        private const val FALLBACK_CONTACT_EMAIL = "ak6102@163.com"
-
-        /** 试用上报失败后多久补报一次（见 [scheduleTrialReplay]）。 */
-        private const val TRIAL_REPLAY_DELAY_MS = 15_000L
+        private const val FALLBACK_CONTACT_EMAIL = "support@709048.xyz"
     }
 
     private val api = LicenseApi()
@@ -74,9 +66,6 @@ class LocalLicenseRepository(
 
     @Volatile
     private var cachedDeviceId: String = ""
-
-    /** 试用补报是否已经排过队，避免连点开关排出多次请求。 */
-    private val trialReplayScheduled = java.util.concurrent.atomic.AtomicBoolean(false)
 
     private val _contactEmail = MutableStateFlow(FALLBACK_CONTACT_EMAIL)
 
@@ -144,59 +133,53 @@ class LocalLicenseRepository(
         }
     }
 
-    override suspend fun startTrial(): Boolean {
+    /**
+     * 领 0 元体验包。
+     *
+     * 服务端把体验包做成了一条普通套餐，所以这里就是「下单」：
+     * 价格 0 → 服务端跳过支付宝、当场开单发货、返回票据。
+     *
+     * 为什么不再做本地乐观更新：以前是先记一个本地试用起点再说，
+     * 断网时看着像成功了，实际上云端什么都没记上，事后对不上账也没法补。
+     * 现在体验包和付费共用一条发货链路，**拿到票据才算领到**，
+     * 领不到就老实告诉家长失败，让他重试或换网络。
+     */
+    override suspend fun claimTrialPack(): ClaimResult {
         val id = ensureDeviceId()
-        val now = System.currentTimeMillis()
 
-        // 先本地生效：家长点开关必须立刻看到反馈。
-        // 服务端用的是 COALESCE 写入，重复上报不会覆盖真正的开始时间。
-        licenseDataSource.update { data ->
-            if (data.trialStartedAtMs > 0L) {
-                data
-            } else {
-                data.copy(
-                    trialStartedAtMs = now,
-                    trialExpireAtMs = now + FALLBACK_TRIAL_DAYS * DAY_MS,
-                )
-            }
+        // 和付款下单一样用 NonCancellable：家长点完常常立刻退出设置页，
+        // viewModelScope 一取消，请求就被掐断，服务端可能已经发货、本地却没落盘。
+        val result = withContext(NonCancellable) {
+            api.createOrder(id, TRIAL_PLAN_KEY)
         }
 
-        // 用 NonCancellable 包住这次请求。
-        // 家长点完「开始试用」通常会立刻退出设置页，viewModelScope 随之取消；
-        // 普通挂起调用会被直接掐断，服务端就永远收不到这条记录 —— 后台看到的就是
-        // 「有设备、没有试用」，也正是这个 bug。
-        val result = withContext(NonCancellable) { api.startTrial(id, appVersion()) }
         return when (result) {
             is LicenseApi.Result.Ok -> {
-                applySync(result.value)
-                true
+                val order = result.value
+                if (!order.paid) {
+                    // 0 元套餐不该出现 pending。真出现了说明后台把这一档的价格改了，
+                    // 客户端不能自作主张放行，交回调用方提示失败。
+                    Logger.logError(TAG, "trial pack returned unpaid order ${order.orderNo}")
+                    return ClaimResult.Failed("体验包暂时不可用，请稍后再试")
+                }
+                applyPaid(order.ticket, order.token, order.serverTimeMs)
+                // 记下「领过了」，之后入口不再出现；同时把天数缓存下来给文案用
+                licenseDataSource.update { it.copy(trialPackClaimed = true) }
+                ClaimResult.Ok
             }
 
-            is LicenseApi.Result.Err -> {
-                Logger.logError(TAG, "startTrial failed: ${result.code} ${result.message}")
-                // 本地已经生效，但云端没有这条记录。过一会儿补一次：
-                // bootstrap 会带上本地起点自动补写，所以即使这次也失败，
-                // 下次冷启动 / 进授权页仍能补上——这里只是把「等下次冷启动」缩短到十几秒。
-                // 不立刻重试：同一条链路刚超时，紧接着再来一次大概率还是超时。
-                scheduleTrialReplay()
-                false
-            }
-        }
-    }
+            is LicenseApi.Result.Err -> when (result.code) {
+                "TRIAL_USED", "ALREADY_LICENSED" -> {
+                    // 领过了：这不是错误，是「换条路」——本地也记下来，别再摆这个入口
+                    licenseDataSource.update { it.copy(trialPackClaimed = true) }
+                    ClaimResult.AlreadyUsed
+                }
 
-    /**
-     * 安排一次试用补报。
-     *
-     * 用一个独立的 flag 去重：家长可能连点几次开关，没必要排出五六次请求。
-     */
-    private fun scheduleTrialReplay() {
-        if (!trialReplayScheduled.compareAndSet(false, true)) return
-        scope.launch {
-            delay(TRIAL_REPLAY_DELAY_MS)
-            trialReplayScheduled.set(false)
-            runCatching {
-                if (latest.trialStartedAtMs > 0L) refresh()
-            }.onFailure { Logger.logError(TAG, "trial replay failed: $it") }
+                else -> {
+                    Logger.logError(TAG, "claimTrialPack failed: ${result.code} ${result.message}")
+                    ClaimResult.Failed(result.message.ifBlank { "网络不太好，请稍后重试" })
+                }
+            }
         }
     }
 
@@ -270,6 +253,10 @@ class LocalLicenseRepository(
                 // 服务端没给（未开始试用）时保留本地值，别把乐观写入的试用时间抹掉
                 trialStartedAtMs = response.trialStartedAtMs.takeIf { it > 0L } ?: data.trialStartedAtMs,
                 trialExpireAtMs = response.trialExpireAtMs.takeIf { it > 0L } ?: data.trialExpireAtMs,
+                // 服务端说「体验包已经不能领了」就记下来，入口不再出现；
+                // 没下发（旧服务端 / 套餐下架）时保持原值，不要凭一次同步就把入口判死。
+                trialPackClaimed = response.trialPlanAvailable?.let { !it } ?: data.trialPackClaimed,
+                trialPackDays = response.trialPlanDays.takeIf { it > 0 } ?: data.trialPackDays,
                 lastSyncAtMs = now,
                 clockSkewMs = if (response.serverTimeMs > 0L) response.serverTimeMs - now else data.clockSkewMs,
             )

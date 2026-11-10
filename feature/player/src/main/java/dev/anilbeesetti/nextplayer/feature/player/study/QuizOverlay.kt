@@ -570,10 +570,14 @@ private fun QuizSummaryOverlay(
         ) {
             Text(
                 text = stringResource(
-                    if (summary.allCorrect) {
-                        R.string.quiz_summary_perfect_title
-                    } else {
-                        R.string.quiz_summary_retry_title
+                    // 「全对」和「都过了但用了排除法」是两件事：后者不该拿到「全部答对」四个字。
+                    // 家长会翻这张结果页，说不清楚反而伤信任。
+                    when {
+                        summary.allCorrect && summary.eliminatedCount == 0 ->
+                            R.string.quiz_summary_perfect_title
+
+                        summary.allCorrect -> R.string.quiz_summary_eliminated_title
+                        else -> R.string.quiz_summary_retry_title
                     },
                 ),
                 color = if (summary.allCorrect) Color(0xFF9FE1CB) else Color(0xFFFAC775),
@@ -583,10 +587,17 @@ private fun QuizSummaryOverlay(
             )
             Spacer(Modifier.height(12.dp))
             Text(
-                text = if (summary.allCorrect) {
-                    stringResource(R.string.quiz_summary_perfect_desc, summary.nextMinutes)
-                } else {
-                    stringResource(R.string.quiz_summary_retry_desc, summary.nextMinutes)
+                text = when {
+                    summary.allCorrect && summary.eliminatedCount == 0 ->
+                        stringResource(R.string.quiz_summary_perfect_desc, summary.nextMinutes)
+
+                    summary.allCorrect -> stringResource(
+                        R.string.quiz_summary_eliminated_desc,
+                        summary.eliminatedCount,
+                        summary.nextMinutes,
+                    )
+
+                    else -> stringResource(R.string.quiz_summary_retry_desc, summary.nextMinutes)
                 },
                 color = Color(0xFFEDEDED),
                 fontSize = 17.sp,

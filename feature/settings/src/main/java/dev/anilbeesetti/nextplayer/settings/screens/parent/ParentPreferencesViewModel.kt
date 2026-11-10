@@ -2,6 +2,7 @@ package dev.anilbeesetti.nextplayer.settings.screens.parent
 
 import androidx.lifecycle.viewModelScope
 import dev.anilbeesetti.nextplayer.core.data.license.LicenseApi
+import dev.anilbeesetti.nextplayer.core.data.repository.ClaimResult
 import dev.anilbeesetti.nextplayer.core.data.repository.ContentPackRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.LicenseRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.QuizBankRepository
@@ -123,7 +124,7 @@ class ParentPreferencesViewModel(
 
             ParentPreferencesUiEvent.ToggleStudyMode -> toggleStudyMode()
             ParentPreferencesUiEvent.ToggleRestMode -> toggleRestMode()
-            ParentPreferencesUiEvent.ConfirmStartTrial -> confirmStartTrial()
+            ParentPreferencesUiEvent.ConfirmClaimTrialPack -> confirmClaimTrialPack()
 
             ParentPreferencesUiEvent.ToggleSeekThrottle -> toggleSeekThrottle()
 
@@ -235,8 +236,8 @@ class ParentPreferencesViewModel(
 
         // 打开方向才需要授权，关闭不需要 —— 否则等于把「退订」也锁在付费墙后面
         if (!current.studyActive && !current.license.pro) {
-            if (current.canStartTrial) {
-                showDialog(ParentPreferencesDialog.StartTrial)
+            if (current.canClaimTrialPack) {
+                showDialog(ParentPreferencesDialog.ClaimTrialPack)
             } else {
                 openPurchase()
             }
@@ -251,26 +252,38 @@ class ParentPreferencesViewModel(
     }
 
     /**
-     * 确认开始试用。
+     * 领取 0 元体验包。
      *
-     * 先本地生效再上报（[LicenseRepository.startTrial] 内部就是乐观更新）：
-     * 家长点了「确定」，开关必须立刻打开。联网失败不影响这次开启，
-     * 只是服务端的试用起点会晚一点补上——那一段时间里本地已经算在试用期内了。
+     * 体验包是服务端的一条 0 元套餐，走和付费完全相同的下单 + 发票据链路，
+     * 所以这里**没有本地乐观开启**：拿到票据才开学习模式。
+     *
+     * 以前是先本地写一个试用起点再上报，断网时界面说「试用中」、后台什么都没有，
+     * 事后既补不上也解释不清。现在三种结果分开处理，家长不会再看不懂状态：
+     *   · 领到 → 立即开学习模式；
+     *   · 领过 → 直接引导去买（这不是错误）；
+     *   · 失败 → 明确说「没领到」，可以再点一次。
      */
-    private fun confirmStartTrial() {
+    private fun confirmClaimTrialPack() {
         showDialog(null)
+        // 请求在飞的时候得有个动静，否则家长看到弹窗消失、开关没亮，会以为点空了
+        stateInternal.update { it.copy(trialPack = TrialPackUiState.Claiming) }
         viewModelScope.launch {
-            // NonCancellable 不能省：家长点完「确定」常常立刻退出这个页面，
-            // viewModelScope 一取消，开关写入和服务端上报都会被掐断，
-            // 结果就是「App 显示试用中、后台却没有任何试用记录」。
-            withContext(NonCancellable) {
-                enableStudyModeNow()
-                val synced = licenseRepository.startTrial()
-                // 试用在本地已经生效（开关此刻就是亮的），但上报没成功——必须说出来。
-                // 之前这里完全静默：家长看到开关自己亮了，不知道是成功还是点了没反应，
-                // 再点一下反而把它关掉，更容易误判成「按钮坏了」。
-                if (!synced) {
-                    stateInternal.update { it.copy(trialSyncPending = true) }
+            // NonCancellable 不能省：家长点完常常立刻退出这个页面，
+            // viewModelScope 一取消，请求就被掐断——而服务端可能已经发货，票却丢了。
+            val result = withContext(NonCancellable) { licenseRepository.claimTrialPack() }
+            when (result) {
+                is ClaimResult.Ok -> {
+                    enableStudyModeNow()
+                    stateInternal.update { it.copy(trialPack = TrialPackUiState.Idle) }
+                }
+
+                is ClaimResult.AlreadyUsed -> {
+                    stateInternal.update { it.copy(trialPack = TrialPackUiState.AlreadyUsed) }
+                    openPurchase()
+                }
+
+                is ClaimResult.Failed -> {
+                    stateInternal.update { it.copy(trialPack = TrialPackUiState.Failed(result.message)) }
                 }
             }
         }
@@ -303,8 +316,8 @@ class ParentPreferencesViewModel(
      * 试用已结束（或从未正式开始）就直接进购买页。
      */
     private fun offerPro() {
-        if (stateInternal.value.canStartTrial) {
-            showDialog(ParentPreferencesDialog.StartTrial)
+        if (stateInternal.value.canClaimTrialPack) {
+            showDialog(ParentPreferencesDialog.ClaimTrialPack)
         } else {
             openPurchase()
         }
@@ -374,8 +387,8 @@ class ParentPreferencesViewModel(
     private fun toggleRestMode() {
         val current = stateInternal.value
         if (!current.restActive && !current.license.pro) {
-            if (current.canStartTrial) {
-                showDialog(ParentPreferencesDialog.StartTrial)
+            if (current.canClaimTrialPack) {
+                showDialog(ParentPreferencesDialog.ClaimTrialPack)
             } else {
                 openPurchase()
             }
@@ -673,13 +686,12 @@ data class ParentPreferencesUiState(
     /** 授权状态，来自本地验签，不依赖网络。 */
     val license: LicenseStatus = LicenseStatus(),
     /**
-     * 试用已在本地生效、但没上报成功（断网 / 超时 / 服务端抖动）。
+     * 领取 0 元体验包的进行状态。
      *
-     * 只用来在授权区块给一句「能用，云端的记录会自动补」的说明；
-     * 不参与任何功能判定——[license] 才是唯一的真相。
-     * 不落盘：家长离开这一页就消失，下次进来 bootstrap 已经补报过了。
+     * 只在授权区块显示一行说明，不参与任何功能判定——[license] 才是唯一的真相。
+     * 不落盘：离开这一页就消失。
      */
-    val trialSyncPending: Boolean = false,
+    val trialPack: TrialPackUiState = TrialPackUiState.Idle,
     val deviceId: String = "",
     val contactEmail: String = "",
     val purchase: PurchaseUiState = PurchaseUiState(),
@@ -701,9 +713,14 @@ data class ParentPreferencesUiState(
     val isDowngraded: Boolean
         get() = effectiveLevel < activeLevel
 
-    /** 还没开始过试用才有「免费试用」这条路；试用用完了只能买。 */
-    val canStartTrial: Boolean
-        get() = !license.trialStarted && !license.pro
+    /**
+     * 还有「0 元体验包」这条路吗。
+     *
+     * 体验包一台设备终身一次（领过、老版本试用过、或已经买过都不再给），
+     * 判定结论由 [LicenseStatus.trialPackUsed] 带过来，本地不再自己拼条件。
+     */
+    val canClaimTrialPack: Boolean
+        get() = !license.pro && !license.trialPackUsed
 
     /** 授权页副标题：一句话说清现在是免费、试用还是已购买。 */
     val licenseHeadline: String
@@ -774,8 +791,27 @@ data class PurchasePlan(
     }
 }
 
+/**
+ * 领取 0 元体验包的过程状态。
+ *
+ * 只用于在授权区块显示一行说明。真正「能不能用」永远看 [LicenseStatus]，
+ * 不在这里做任何权限判断。
+ */
+sealed interface TrialPackUiState {
+    data object Idle : TrialPackUiState
+
+    /** 请求在飞：弹窗已经关掉了，得让家长知道还在办事。 */
+    data object Claiming : TrialPackUiState
+
+    /** 这台设备领过了：这不是错误，引导他去买。 */
+    data object AlreadyUsed : TrialPackUiState
+
+    /** 网络失败，可以重试。 */
+    data class Failed(val message: String) : TrialPackUiState
+}
+
 sealed interface ParentPreferencesDialog {
-    data object StartTrial : ParentPreferencesDialog
+    data object ClaimTrialPack : ParentPreferencesDialog
     data object IntervalOptions : ParentPreferencesDialog
     data object QuestionsOptions : ParentPreferencesDialog
     data object SeekIntervalOptions : ParentPreferencesDialog
@@ -792,7 +828,7 @@ sealed interface ParentPreferencesUiEvent {
     data object NavigateUp : ParentPreferencesUiEvent
     data object OpenReport : ParentPreferencesUiEvent
     data object ToggleStudyMode : ParentPreferencesUiEvent
-    data object ConfirmStartTrial : ParentPreferencesUiEvent
+    data object ConfirmClaimTrialPack : ParentPreferencesUiEvent
     data object ToggleSeekThrottle : ParentPreferencesUiEvent
     data object OpenIntervalOptions : ParentPreferencesUiEvent
     data object OpenQuestionsOptions : ParentPreferencesUiEvent

@@ -86,17 +86,39 @@ class LicenseApi(
         val rebindLimit: Int = 0,
         val rebindUsed: Int = 0,
         val contactEmail: String = "",
+        /**
+         * 0 元体验包现在能不能领。
+         *
+         * null = 服务端没下发（套餐下架、或还是旧版服务端），客户端保持原状，
+         * 不要把它当成 false —— 那会把老用户本来能领的入口藏掉。
+         */
+        val trialPlanAvailable: Boolean? = null,
+        /** 体验包天数，服务端下发；0 表示没拿到，文案回落到默认值 */
+        val trialPlanDays: Int = 0,
     )
 
     data class PurchaseOrder(
         val orderNo: String,
         val amountCents: Int,
-        /** `qr`（当面付扫码）或 `app`（App 支付，当前未启用） */
+        /** `qr`（当面付扫码）、`app`（App 支付，当前未启用）或 `free`（0 元套餐，下单即发货） */
         val method: String,
         /** 二维码内容。**注意是内容不是图片**：渲染由客户端用 ZXing 生成，见 QrEncoder */
         val qrContent: String,
         /** 二维码剩余有效秒数 */
         val expireIn: Int,
+        /**
+         * 是否已经付清（0 元套餐恒为 true）。
+         *
+         * 有它就不用再轮询 `/order/{no}`：体验包是「点一下就到账」，
+         * 让家长对着一个空二维码等两分钟，比不给体验更糟。
+         */
+        val paid: Boolean = false,
+        val ticket: String? = null,
+        val token: String = "",
+        val licensed: Boolean = false,
+        val permanent: Boolean = false,
+        val expireAtMs: Long = 0L,
+        val serverTimeMs: Long = 0L,
     )
 
     data class OrderState(
@@ -138,26 +160,10 @@ class LicenseApi(
                 rebindLimit = data.optJSONObject("rebind")?.optInt("limit") ?: 0,
                 rebindUsed = data.optJSONObject("rebind")?.optInt("used") ?: 0,
                 contactEmail = data.optString("contact_email"),
-            )
-        }
-    }
-
-    suspend fun startTrial(deviceId: String, appVersion: String): Result<SyncResponse> {
-        val body = JSONObject()
-            .put("device_id", deviceId)
-            .put("app_version", appVersion)
-        return post("/api/v1/trial/start", body, TIMEOUT_SYNC_MS) { data ->
-            // trial/start 的 trial 字段在根部而不是嵌套，和 bootstrap 不一致
-            SyncResponse(
-                serverTimeMs = parseTime(data.optString("server_time")),
-                trialStartedAtMs = parseTime(data.optString("started_at")),
-                trialExpireAtMs = parseTime(data.optString("expire_at")),
-                ticket = data.optString("ticket").takeIf { it.isNotBlank() && it != "null" },
-                token = data.optJSONObject("license")?.optString("token").orEmpty(),
-                licensed = data.optJSONObject("license")?.optBoolean("valid") == true,
-                disabled = data.optJSONObject("license")?.optBoolean("disabled") == true,
-                permanent = data.optJSONObject("license")?.optBoolean("permanent") == true,
-                expireAtMs = parseTime(data.optJSONObject("license")?.optString("expire_at")),
+                trialPlanAvailable = data.optJSONObject("trial_plan")?.let {
+                    it.optBoolean("available")
+                },
+                trialPlanDays = data.optJSONObject("trial_plan")?.optInt("days") ?: 0,
             )
         }
     }
@@ -173,6 +179,13 @@ class LicenseApi(
                 method = data.optString("method", "qr"),
                 qrContent = data.optString("qr_content"),
                 expireIn = data.optInt("expire_in", 900),
+                paid = data.optBoolean("paid") || data.optString("method") == "free",
+                ticket = data.optString("ticket").takeIf { it.isNotBlank() && it != "null" },
+                token = data.optJSONObject("license")?.optString("token").orEmpty(),
+                licensed = data.optJSONObject("license")?.optBoolean("valid") == true,
+                permanent = data.optJSONObject("license")?.optBoolean("permanent") == true,
+                expireAtMs = parseTime(data.optJSONObject("license")?.optString("expire_at")),
+                serverTimeMs = parseTime(data.optString("server_time")),
             )
         }
     }

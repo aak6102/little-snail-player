@@ -625,19 +625,20 @@
     <string name="parent_license_section" translatable="false">授权与售后</string>
     <string name="license_status_title" translatable="false">Pro 授权</string>
     <string name="license_status_free" translatable="false">未解锁 · 基础快进限制（固定 2 分钟）可用</string>
-    <string name="license_status_trial" translatable="false">试用中，剩余 %1$d 天</string>
-    <string name="license_status_trial_over" translatable="false">试用已结束</string>
+    <string name="license_status_trial" translatable="false">体验中，剩余 %1$d 天</string>
+    <string name="license_status_trial_over" translatable="false">体验已结束</string>
     <string name="license_status_paid" translatable="false">已解锁 · 至 %1$s</string>
     <string name="license_status_permanent" translatable="false">已解锁 · 永久版</string>
     <string name="license_buy" translatable="false">解锁 Pro 全部功能</string>
-    <string name="license_buy_hint" translatable="false">试用期内也可随时解锁 · 播放器与基础快进限制永久免费</string>
-    <string name="license_buy_trial_now" translatable="false">立即解锁（试用还剩 %1$d 天）</string>
-    <string name="license_start_trial" translatable="false">免费试用 7 天</string>
-    <!-- 试用已在本地生效、但上报没成功：不要把家长吓回去，说明「能用」+「会自动补」 -->
-    <string name="license_trial_sync_pending" translatable="false">试用已在这台设备上开启，可以正常使用。服务器记录会在联网后自动补上。</string>
-    <string name="license_start_trial_title" translatable="false">开始 7 天免费试用</string>
-    <string name="license_start_trial_message" translatable="false">试用期内 Pro 全部可用：快进自定义间隔或关闭、课标词表、答题锁、学习报告、防沉迷休息。到期后只停 Pro 功能，播放器与基础快进限制（固定 2 分钟）照常使用，孩子的答题记录不会清空。</string>
-    <string name="license_start_trial_ok" translatable="false">开始试用</string>
+    <string name="license_buy_hint" translatable="false">体验期内也可随时解锁 · 播放器与基础快进限制永久免费</string>
+    <string name="license_buy_trial_now" translatable="false">立即解锁（体验还剩 %1$d 天）</string>
+    <string name="license_start_trial" translatable="false">0 元领 %1$d 天体验</string>
+    <string name="license_trial_claiming" translatable="false">正在领取体验包…</string>
+    <string name="license_trial_used" translatable="false">这台设备已经领过体验包了，可以直接解锁 Pro 继续用。</string>
+    <string name="license_trial_failed" translatable="false">领取失败：%1$s。检查网络后再点一次即可。</string>
+    <string name="license_start_trial_title" translatable="false">0 元领取 7 天体验包</string>
+    <string name="license_start_trial_message" translatable="false">体验期内 Pro 全部可用：快进自定义间隔或关闭、课标词表、答题锁、学习报告、防沉迷休息。0 元领取，一台设备限一次，不用绑卡也不会自动续费。到期后只停 Pro 功能，播放器与基础快进限制（固定 2 分钟）照常使用，孩子的答题记录不会清空。</string>
+    <string name="license_start_trial_ok" translatable="false">0 元领取</string>
     <string name="license_device_title" translatable="false">机器码</string>
     <string name="license_device_description" translatable="false">换手机时，把新机器码和支付宝交易号一起发到 %1$s</string>
     <string name="license_copy" translatable="false">复制</string>
@@ -752,6 +753,8 @@
 
     <string name="quiz_summary_perfect_title" translatable="false">全部答对</string>
     <string name="quiz_summary_perfect_desc" translatable="false">可以继续看 %1$d 分钟</string>
+    <string name="quiz_summary_eliminated_title" translatable="false">都答对了</string>
+    <string name="quiz_summary_eliminated_desc" translatable="false">其中 %1$d 题是划掉一个错选项后选中的，这次照样能看 %2$d 分钟</string>
     <string name="quiz_summary_retry_title" translatable="false">有答错的题</string>
     <string name="quiz_summary_retry_desc" translatable="false">这次只能再看 %1$d 分钟，答对了才能看满</string>
     <string name="quiz_summary_score" translatable="false">一次答对 %1$d / %2$d 题</string>

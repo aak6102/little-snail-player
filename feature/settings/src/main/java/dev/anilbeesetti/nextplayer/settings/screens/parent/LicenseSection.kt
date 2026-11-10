@@ -72,20 +72,27 @@ fun ParentLicenseSection(
     Column(
         verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
     ) {
-        // 未购买就把购买入口摆出来，试用期内也显示。
-        // 之前只有「点授权状态那一行」这一条隐藏路径，家长开了试用之后就再也找不到买断的地方 ——
+        // 未购买就把购买入口摆出来，体验期内也显示。
+        // 之前只有「点授权状态那一行」这一条隐藏路径，家长开了体验之后就再也找不到买断的地方 ——
         // 这是最容易丢单的一处，所以做成显式按钮而不是藏在可点条目里。
-        if (!license.licensed) {
+        //
+        // 注意条件不是 `!licensed`：0 元体验包发的是一张**正式票据**，licensed 就是 true，
+        // 按旧条件写会把体验期内的购买入口整块藏掉，白白丢掉最能转化的那 7 天。
+        if (!license.permanent && (!license.licensed || license.fromTrialPack)) {
             Column(modifier = Modifier.fillMaxWidth().padding(bottom = 8.dp)) {
                 Button(
                     onClick = { onAction(ParentPreferencesUiEvent.OpenPurchase) },
                     modifier = Modifier.fillMaxWidth(),
                 ) {
                     Text(
-                        text = if (license.trialActive) {
-                            stringResource(R.string.license_buy_trial_now, license.trialDaysLeft)
-                        } else {
-                            stringResource(R.string.license_buy)
+                        text = when {
+                            license.fromTrialPack ->
+                                stringResource(R.string.license_buy_trial_now, license.remainingDays)
+
+                            license.trialActive ->
+                                stringResource(R.string.license_buy_trial_now, license.trialDaysLeft)
+
+                            else -> stringResource(R.string.license_buy)
                         },
                         style = MaterialTheme.typography.titleMedium,
                     )
@@ -115,13 +122,29 @@ fun ParentLicenseSection(
             isFirstItem = true,
         )
 
-        // 试用已生效但上报失败：把「能用」和「云端会自动补」一起说清楚。
-        // 不写「失败了请重试」——重试也解决不了国际链路抖动，只会让家长反复点开关。
-        if (state.trialSyncPending) {
-            Text(
-                text = stringResource(R.string.license_trial_sync_pending),
+        // 领取体验包的过程说明。
+        // 「领过」不是错误（该去买），「失败」是错误（可以重试），两者颜色不同。
+        when (val pack = state.trialPack) {
+            TrialPackUiState.Idle -> Unit
+
+            TrialPackUiState.Claiming -> Text(
+                text = stringResource(R.string.license_trial_claiming),
                 style = MaterialTheme.typography.bodySmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            )
+
+            TrialPackUiState.AlreadyUsed -> Text(
+                text = stringResource(R.string.license_trial_used),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
+            )
+
+            is TrialPackUiState.Failed -> Text(
+                text = stringResource(R.string.license_trial_failed, pack.message),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.error,
                 modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, bottom = 8.dp),
             )
         }
@@ -164,6 +187,11 @@ private fun licenseDescription(state: ParentPreferencesUiState): String {
     val license = state.license
     return when {
         license.permanent -> stringResource(R.string.license_status_permanent)
+        // 体验包签的也是正式票据，但说「已解锁」会让家长以为已经买过了，
+        // 这里照实说还剩几天，到期时他才不会觉得被骗。
+        license.licensed && license.fromTrialPack ->
+            stringResource(R.string.license_status_trial, license.remainingDays)
+
         license.licensed -> stringResource(
             R.string.license_status_paid,
             formatDay(license.expireAtMs),
@@ -181,7 +209,7 @@ private fun licenseDescription(state: ParentPreferencesUiState): String {
  * 怕买了被套牢、怕试用结束孩子数据没了。
  */
 @Composable
-fun StartTrialDialog(onAction: (ParentPreferencesUiEvent) -> Unit) {
+fun ClaimTrialPackDialog(onAction: (ParentPreferencesUiEvent) -> Unit) {
     NextDialog(
         onDismissRequest = { onAction(ParentPreferencesUiEvent.ShowDialog(null)) },
         title = {
@@ -191,7 +219,7 @@ fun StartTrialDialog(onAction: (ParentPreferencesUiEvent) -> Unit) {
             )
         },
         confirmButton = {
-            TextButton(onClick = { onAction(ParentPreferencesUiEvent.ConfirmStartTrial) }) {
+            TextButton(onClick = { onAction(ParentPreferencesUiEvent.ConfirmClaimTrialPack) }) {
                 Text(text = stringResource(R.string.license_start_trial_ok))
             }
         },
