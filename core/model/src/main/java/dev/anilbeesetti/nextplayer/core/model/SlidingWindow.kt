@@ -45,6 +45,23 @@ class SlidingWindow private constructor(
         head = (head + 1) % windowSeconds
     }
 
+    /**
+     * 按「墙钟」一次性推进多秒，用于 App 不在场后的补账。
+     *
+     * [push] 只认调用次数，进程被关掉/杀掉的这段时间一格都不会滚，
+     * 看满阈值的窗口就会永久冻住——孩子关了机等到晚上回来，仍然一进去就被拦。
+     * 这里把空档 [gapSeconds] 秒一次性补进窗口：前面 [gapSeconds] - 1 秒按「没看」记
+     * （人不在，本来就是休息），最后一秒写入当前真实状态 [watching]。
+     *
+     * [gapSeconds] 小于 1 时按 1 处理（时钟回拨/首次 tick 都走这条）；
+     * 超过窗口长度时只推满一整窗——更长的空档结果等价于整窗作废。
+     */
+    fun advance(gapSeconds: Long, watching: Boolean) {
+        val steps = gapSeconds.coerceIn(1L, windowSeconds.toLong()).toInt()
+        repeat(steps - 1) { push(false) }
+        push(watching)
+    }
+
     /** 持久化形态：桶内容拷贝。 */
     fun toBytes(): ByteArray = buckets.copyOf()
 

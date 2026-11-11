@@ -91,4 +91,34 @@ class SlidingWindowTest {
         // watchMs 以桶内容为准（4 个 1 → 4000），不采信传入的越界 head
         assertEquals(4_000L, restored.watchMsInWindow)
     }
+
+    @Test
+    fun `补账：长空档按休息把整窗刷掉`() {
+        val w = SlidingWindow.create(10)
+        repeat(10) { w.push(true) }
+        assertEquals(10_000L, w.watchMsInWindow)
+
+        // 关机 8 小时：只需推满一整窗，结果等价于整窗作废
+        w.advance(8 * 60 * 60L, watching = false)
+        assertEquals(0L, w.watchMsInWindow)
+    }
+
+    @Test
+    fun `补账：空档逐秒抵掉已看时长，最后一秒记真实状态`() {
+        val w = SlidingWindow.create(10)
+        repeat(10) { w.push(true) }
+
+        // 隔了 4 秒才回来：前 3 秒记休息，最后 1 秒按「正在看」
+        w.advance(4L, watching = true)
+        assertEquals(7_000L, w.watchMsInWindow)
+    }
+
+    @Test
+    fun `补账：gap 小于 1 秒等同正常推一格`() {
+        val w = SlidingWindow.create(5)
+        // 0 与负数（时钟回拨）都应退化成「推进 1 秒」，不能把窗口推乱
+        w.advance(0L, watching = true)
+        w.advance(-3L, watching = true)
+        assertEquals(2_000L, w.watchMsInWindow)
+    }
 }

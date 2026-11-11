@@ -128,6 +128,34 @@ class RestGuardTest {
         assertTrue("离开预警再回来，预警浮层应重新弹起", guard.state.value.preWarnVisible)
     }
 
+    /** 在给定仓库上新建一套 guard（等价于「杀进程后重新进播放器」）。 */
+    private fun guardOn(repo: FakeRestRepository): Pair<RestGuard, QuizGate> {
+        val license = FakeLicenseRepository(pro = true)
+        val quizGate = QuizGate(
+            FakeStudyRepository(),
+            QuizBankRepository(app, contentPack(app)),
+            license,
+            CoroutineScope(Dispatchers.Unconfined),
+        )
+        return RestGuard(repo, quizGate, license, CoroutineScope(Dispatchers.Unconfined)) to quizGate
+    }
+
+    /** 烧进仓库一份「上午已经看满阈值」的存档，并把落盘时间戳设成 [agoMs] 毫秒前。 */
+    private fun repoWatchedUpTo(watchedSeconds: Int, agoMs: Long): FakeRestRepository {
+        val w = SlidingWindow.create(40 * 60)
+        repeat(watchedSeconds) { w.push(true) }
+        return FakeRestRepository(
+            RestProgress(
+                preferences = RestPreferences(enabled = true),
+                windowBytes = w.toBytes(),
+                head = w.headValue(),
+                watchMsInWindow = w.watchMsInWindow,
+                lastTickMs = System.currentTimeMillis() - agoMs,
+                crazyActive = true,
+            ),
+        )
+    }
+
     @Test
     fun `杀进程重启后窗口历史保留直接进入疯狂`() {
         val repo = FakeRestRepository()
@@ -156,5 +184,45 @@ class RestGuardTest {
         guard.restore()
         guard.onTick(true) // 再推进一秒，确保越过阈值
         assertEquals(RestPhase.CRAZY, guard.state.value.phase)
+    }
+
+    @Test
+    fun `关机一整晚后重新进入不该被继续拦`() {
+        // 上午看满 30 分钟触发，随后关机；落盘时间戳停在关机那一刻
+        val repo = repoWatchedUpTo(watchedSeconds = 1800, agoMs = 8 * 60 * 60 * 1000L)
+        val (guard, quizGate) = guardOn(repo)
+
+        guard.restore()
+        // 晚上一进来就接着播：这一秒算在看，但八小时不在场必须先按休息补进窗口
+        guard.onTick(true)
+
+        assertEquals("关机期间人不在，就该算休息", RestPhase.IDLE, guard.state.value.phase)
+        assertFalse("不该一进播放器就直接切疯狂节奏", quizGate.crazyMode)
+    }
+
+    @Test
+    fun `关机十五分钟抵掉十五分钟已看时长`() {
+        // 整窗 40 分钟都在看（最坏情况），关机 15 分钟回来
+        val repo = repoWatchedUpTo(watchedSeconds = 40 * 60, agoMs = 15 * 60 * 1000L)
+        val (guard) = guardOn(repo)
+
+        guard.restore()
+        guard.onTick(true)
+
+        // 2400 秒 − 900 秒休息 ≈ 25 分钟，低于 29.5 分钟的预警线
+        assertEquals(RestPhase.IDLE, guard.state.value.phase)
+    }
+
+    @Test
+    fun `只隔几秒重启仍然接着拦，不会白送休息`() {
+        // 孩子强杀进程后立刻重进（2 秒）：窗口基本原样保留
+        val repo = repoWatchedUpTo(watchedSeconds = 1800, agoMs = 2_000L)
+        val (guard, quizGate) = guardOn(repo)
+
+        guard.restore()
+        guard.onTick(true)
+
+        assertEquals("几秒钟的退出不能当成休息", RestPhase.CRAZY, guard.state.value.phase)
+        assertTrue(quizGate.crazyMode)
     }
 }

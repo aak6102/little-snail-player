@@ -49,6 +49,15 @@ class RestGuard(
     /** 最近一次落盘时间戳，用于把 1 秒一次的推进节流到每 30 秒写一次。 */
     private var lastPersistMs: Long = 0L
 
+    /**
+     * 上一次记账的墙钟时间（毫秒），用来发现「App 刚才不在场」。
+     *
+     * 窗口本身只认 [onTick] 的调用次数，进程一死就停摆；靠这个时间戳在恢复后
+     * 把断电/杀进程/系统冻结的那段空档一次性补进窗口（算休息）。
+     * 0 表示未知（老版本存档里没有可用时间），此时不补账，保证不会把窗口误清空。
+     */
+    private var lastTickAtMs: Long = 0L
+
     /** 上次落盘时的疯狂状态，用于「状态一变就立即落盘」，让重启能立刻恢复拦截。 */
     private var lastPersistedCrazy: Boolean = false
 
@@ -65,7 +74,10 @@ class RestGuard(
      * 每秒由 [dev.anilbeesetti.nextplayer.feature.player.service.PlayerService] 调用。
      *
      * [progressing] 是 `isPlaying && STATE_READY`：这一秒算「在看」（true）还是「没看」（false）。
-     * 窗口每 1 秒推进一格，无论是否在看——这样暂停发呆不会帮你凑够休息。
+     * 窗口每推进一格，无论是否在看——这样暂停发呆不会帮你凑够休息。
+     *
+     * 推进的格数按墙钟算：上一次 tick 到现在隔了几秒就推几格，中间的空档记「没看」。
+     * App 被关掉/杀掉/被系统冻结时 ticker 停了，重启后靠这个把整段不在场时间补成休息。
      */
     fun onTick(progressing: Boolean) {
         val prefs = restRepository.preferences
@@ -78,7 +90,13 @@ class RestGuard(
         }
 
         val w = getWindow(prefs)
-        w.push(progressing)
+        // 先按墙钟补账，再推这一秒：gap > 1 说明上一次 tick 到现在隔了好几秒，
+        // 多出来的部分是「App 不在场」（关机、杀进程、系统冻结），要按休息补进窗口。
+        // 少了这一步，看满阈值的窗口会一直冻着，孩子关一晚机回来还是一进去就被拦。
+        val now = System.currentTimeMillis()
+        val gapSeconds = if (lastTickAtMs > 0L) (now - lastTickAtMs) / 1000L else 0L
+        lastTickAtMs = now
+        w.advance(gapSeconds, progressing)
 
         val watchMs = w.watchMsInWindow
         val threshold = prefs.thresholdWatchMs
@@ -124,6 +142,9 @@ class RestGuard(
             SlidingWindow.create(prefs.windowSeconds)
         }
         window = w
+        // 计数基准跟着恢复的时间戳走：gap 从「上次落盘的 tick」算起，
+        // 不能从此刻算起，否则关机那段会被当成 0 秒，窗口照旧冻住。
+        lastTickAtMs = progress.lastTickMs
         return w
     }
 
