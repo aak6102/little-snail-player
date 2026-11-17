@@ -50,6 +50,9 @@ import dev.anilbeesetti.nextplayer.feature.player.study.QuizGate
 import dev.anilbeesetti.nextplayer.feature.player.study.QuizOverlay
 import dev.anilbeesetti.nextplayer.feature.player.study.RestGuard
 import dev.anilbeesetti.nextplayer.feature.player.study.RestPreWarnOverlay
+import dev.anilbeesetti.nextplayer.feature.player.study.quota.QuotaExhaustedOverlay
+import dev.anilbeesetti.nextplayer.feature.player.study.quota.QuotaGuard
+import dev.anilbeesetti.nextplayer.feature.player.study.quota.QuotaNoticeBar
 import dev.anilbeesetti.nextplayer.feature.player.utils.PlayerApi
 import dev.anilbeesetti.nextplayer.feature.player.utils.PlaylistPlaybackContract
 import dev.anilbeesetti.nextplayer.feature.player.utils.asExplicitPlaylistItem
@@ -81,6 +84,8 @@ class PlayerActivity : ComponentActivity() {
     private val mediaRepository: MediaRepository by inject()
     private val quizGate: QuizGate by inject()
     private val restGuard: RestGuard by inject()
+
+    private val quotaGuard: QuotaGuard by inject()
 
     private val viewModel: PlayerViewModel by viewModel { parametersOf(playerOutput()) }
     val playerPreferences get() = viewModel.state.value.playerPreferences
@@ -161,9 +166,28 @@ class PlayerActivity : ComponentActivity() {
                     QuizOverlay(gate = quizGate)
                     // 防沉迷预警浮层（进入疯狂模式前 30 秒提醒），叠在答题锁之上
                     RestPreWarnOverlay(guard = restGuard)
+                    // 额度提示条：轻量、不挡画面，叠在预警浮层之上（报数比警告更该看得见）
+                    QuotaNoticeBar(guard = quotaGuard)
+                    // 额度耗尽的全屏锁：最上层，吞点击但不吞返回键
+                    QuotaExhaustedOverlay(
+                        guard = quotaGuard,
+                        onExit = ::finishAndStopPlayerSession,
+                    )
                 }
             }
         }
+    }
+
+    /**
+     * 每次回到前台结算一次学习奖励。
+     *
+     * 这是「孩子学完 30 分钟」到账的主路径：`queryEvents` 读的是系统数据库里已经落盘的
+     * 使用事件，孩子切走那一刻就写进去了，所以这里不需要重启进程、也不需要轮询。
+     * 冷启动走的是同一条路径（`onCreate` 之后必然 `onStart`）。
+     */
+    override fun onStart() {
+        super.onStart()
+        quotaGuard.settleIfDue()
     }
 
     private fun playerOutput() = PlayerViewModel.Output(

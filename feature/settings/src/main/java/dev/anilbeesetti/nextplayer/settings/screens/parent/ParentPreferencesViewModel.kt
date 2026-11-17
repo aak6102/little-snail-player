@@ -4,6 +4,7 @@ import androidx.lifecycle.viewModelScope
 import dev.anilbeesetti.nextplayer.core.data.license.LicenseApi
 import dev.anilbeesetti.nextplayer.core.data.repository.ClaimResult
 import dev.anilbeesetti.nextplayer.core.data.repository.ContentPackRepository
+import dev.anilbeesetti.nextplayer.core.data.repository.DailyQuotaRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.LicenseRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.QuizBankRepository
 import dev.anilbeesetti.nextplayer.core.data.repository.RestRepository
@@ -47,12 +48,14 @@ class ParentPreferencesViewModel(
     private val licenseRepository: LicenseRepository,
     private val contentPackRepository: ContentPackRepository,
     private val restRepository: RestRepository,
+    private val dailyQuotaRepository: DailyQuotaRepository,
     @InjectedParam internal var output: Output,
 ) : MviViewModel<ParentPreferencesUiState, ParentPreferencesUiEvent>() {
 
     data class Output(
         val navigateUp: () -> Unit,
         val navigateToReport: () -> Unit,
+        val navigateToQuota: () -> Unit,
     )
 
     private val stateInternal = MutableStateFlow(ParentPreferencesUiState())
@@ -73,8 +76,18 @@ class ParentPreferencesViewModel(
             restRepository.progress.collect(::publishRest)
         }
         viewModelScope.launch {
-            // 授权状态是本地算的，这一行不会触发任何网络请求
             licenseRepository.status.collect(::publishLicense)
+        }
+        viewModelScope.launch {
+            // 入口上要显示「今天还剩多久」，家长翻到这里就能判断要不要再提醒孩子。
+            dailyQuotaRepository.progress.collect { progress ->
+                stateInternal.update {
+                    it.copy(
+                        quotaEnabled = progress.preferences.enabled,
+                        quotaRemainingMinutes = progress.remainingMinutes,
+                    )
+                }
+            }
         }
         // 档位元数据要读 assets，放到 IO 线程；只加载一次，切换档位不改变清单本身
         reloadLevels()
@@ -121,6 +134,7 @@ class ParentPreferencesViewModel(
         when (action) {
             ParentPreferencesUiEvent.NavigateUp -> output.navigateUp()
             ParentPreferencesUiEvent.OpenReport -> output.navigateToReport()
+            ParentPreferencesUiEvent.OpenQuota -> output.navigateToQuota()
 
             ParentPreferencesUiEvent.ToggleStudyMode -> toggleStudyMode()
             ParentPreferencesUiEvent.ToggleRestMode -> toggleRestMode()
@@ -683,6 +697,10 @@ data class ParentPreferencesUiState(
     val requiredRestMinutes: Int = RestPreferences.DEFAULT_REST_MINUTES,
     val crazyIntervalMinutes: Int = RestPreferences.DEFAULT_CRAZY_INTERVAL_MINUTES,
     val preWarnSeconds: Int = RestPreferences.DEFAULT_PREWARN_SECONDS,
+    /** 每日额度：开关是否打开（入口卡片据此决定显示「还剩 N 分钟」还是引导文案）。 */
+    val quotaEnabled: Boolean = false,
+    /** 每日额度：今天还剩多少分钟。 */
+    val quotaRemainingMinutes: Int = 0,
     /** 授权状态，来自本地验签，不依赖网络。 */
     val license: LicenseStatus = LicenseStatus(),
     /**
@@ -827,6 +845,7 @@ sealed interface ParentPreferencesDialog {
 sealed interface ParentPreferencesUiEvent {
     data object NavigateUp : ParentPreferencesUiEvent
     data object OpenReport : ParentPreferencesUiEvent
+    data object OpenQuota : ParentPreferencesUiEvent
     data object ToggleStudyMode : ParentPreferencesUiEvent
     data object ConfirmClaimTrialPack : ParentPreferencesUiEvent
     data object ToggleSeekThrottle : ParentPreferencesUiEvent

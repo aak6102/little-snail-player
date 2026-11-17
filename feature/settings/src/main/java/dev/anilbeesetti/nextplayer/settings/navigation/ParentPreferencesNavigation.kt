@@ -48,6 +48,7 @@ fun EntryProviderScope<NavKey>.parentPreferencesEntry(
     backStack: NavBackStack<NavKey>,
     onNavigateUp: () -> Unit,
     onNavigateToReport: () -> Unit,
+    onNavigateToQuota: () -> Unit,
 ) {
     entry<ParentPreferencesRoute> {
         val session = koinInject<ParentGateSession>()
@@ -95,6 +96,7 @@ fun EntryProviderScope<NavKey>.parentPreferencesEntry(
                     onNavigateUp()
                 },
                 navigateToReport = onNavigateToReport,
+                navigateToQuota = onNavigateToQuota,
             )
             val viewModel = koinViewModel<ParentPreferencesViewModel>(
                 parameters = { parametersOf(output) },

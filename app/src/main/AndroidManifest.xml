@@ -24,6 +24,14 @@
         android:name="android.permission.WRITE_EXTERNAL_STORAGE"
         android:maxSdkVersion="32"
         tools:ignore="ScopedStorage" />
+    <!--
+        每日观看额度：读「学习 App 今天用了多久」只能走 UsageStatsManager。
+        这是特殊权限（不属于运行时权限），App 无法自己弹窗申请，必须由家长到系统设置的
+        「使用情况访问权限」里手动开启；未开启时奖励恒为 0，设置页会显式提示。
+    -->
+    <uses-permission
+        android:name="android.permission.PACKAGE_USAGE_STATS"
+        tools:ignore="ProtectedPermissions" />
 
     <!--
         Android 11 起的包可见性限制：不声明这段，queryIntentServices 就查不到任何
@@ -34,6 +42,15 @@
     <queries>
         <intent>
             <action android:name="android.intent.action.TTS_SERVICE" />
+        </intent>
+        <!--
+            每日额度的「选择学习 App」需要列出桌面有启动图标的 App。
+            只声明这两个 intent 过滤，不申请 QUERY_ALL_PACKAGES —— 后者是应用商店
+            重点审查的敏感权限，而这里只需要「能从桌面点开的应用」，范围本来就窄。
+        -->
+        <intent>
+            <action android:name="android.intent.action.MAIN" />
+            <category android:name="android.intent.category.LAUNCHER" />
         </intent>
     </queries>
 

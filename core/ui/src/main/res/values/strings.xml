@@ -782,4 +782,53 @@
     <string name="update_later" translatable="false">稍后</string>
     <string name="update_close" translatable="false">知道了</string>
     <string name="update_open_settings" translatable="false">去设置</string>
+
+    <!-- 每日观看额度 -->
+    <string name="quota_notice_interval" translatable="false">今天已看 %1$d 分钟 · 还剩 %2$d 分钟</string>
+    <string name="quota_notice_low_balance" translatable="false">只剩 %1$d 分钟了</string>
+    <string name="quota_notice_last_minute" translatable="false">还剩 1 分钟，到点会自动暂停</string>
+    <string name="quota_notice_reward" translatable="false">学习奖励到账 +%1$d 分钟</string>
+    <string name="quota_exhausted_title" translatable="false">今天的额度看完了</string>
+    <string name="quota_exhausted_used" translatable="false">今天一共看了 %1$d 分钟</string>
+    <string name="quota_exhausted_reset" translatable="false">明天 0 点自动恢复</string>
+    <string name="quota_exhausted_pending" translatable="false">去《%1$s》学满 %2$d 分钟，能再换 %3$d 分钟</string>
+    <string name="quota_exhausted_go_study" translatable="false">去学习</string>
+    <string name="quota_exhausted_dismiss" translatable="false">关闭播放器</string>
+
+    <!-- 家长设置·每日观看额度 -->
+    <string name="quota_settings_title" translatable="false">每日观看额度</string>
+    <string name="quota_settings_entry_desc" translatable="false">基本时长 + 学习奖励，今天还剩 %1$d 分钟</string>
+    <string name="quota_settings_entry_desc_off" translatable="false">设置每天最多能看多久，学习可换时长</string>
+    <string name="quota_mode" translatable="false">每日额度限制</string>
+    <string name="quota_mode_desc_on" translatable="false">今日上限 %1$d 分钟，剩余 %2$d 分钟</string>
+    <string name="quota_mode_desc_off" translatable="false">关闭后不限总量，奖励时长也不再计算</string>
+    <string name="quota_base" translatable="false">基本时长</string>
+    <string name="quota_base_value" translatable="false">每天 %1$d 分钟</string>
+    <string name="quota_max_reward" translatable="false">单日奖励上限</string>
+    <string name="quota_max_reward_value" translatable="false">最多再 +%1$d 分钟</string>
+    <string name="quota_notice" translatable="false">定时提醒</string>
+    <string name="quota_notice_off" translatable="false">已关闭</string>
+    <string name="quota_notice_value" translatable="false">每 %1$d 分钟提醒一次</string>
+    <string name="quota_today" translatable="false">今日已看</string>
+    <string name="quota_today_value" translatable="false">%1$d 分钟 · 剩余 %2$d 分钟</string>
+    <string name="quota_reward_section" translatable="false">学习奖励方案</string>
+    <string name="quota_reward_empty" translatable="false">还没有方案。添加后，孩子在学习 App 上用够时间就能换视频时长</string>
+    <string name="quota_rule_value" translatable="false">学满 %1$d 分钟 → +%2$d 分钟</string>
+    <string name="quota_rule_granted" translatable="false">今日已到账 +%1$d 分钟</string>
+    <string name="quota_add_rule" translatable="false">添加奖励方案</string>
+    <string name="quota_add_rule_desc" translatable="false">选一个学习 App，设定达标时长和奖励</string>
+    <string name="quota_pick_app" translatable="false">选择学习 App</string>
+    <string name="quota_pick_app_empty" translatable="false">没有查到可用的应用，请检查使用情况访问权限</string>
+    <string name="quota_required_title" translatable="false">达标时长</string>
+    <string name="quota_required_value" translatable="false">学满 %1$d 分钟</string>
+    <string name="quota_reward_title" translatable="false">奖励时长</string>
+    <string name="quota_reward_value" translatable="false">奖励 %1$d 分钟</string>
+    <string name="quota_rule_edit_title" translatable="false">编辑方案</string>
+    <string name="quota_rule_edit_required" translatable="false">改达标时长</string>
+    <string name="quota_rule_edit_reward" translatable="false">改奖励时长</string>
+    <string name="quota_rule_delete" translatable="false">删除这条方案</string>
+    <string name="quota_permission_missing" translatable="false">未开启「使用情况访问权限」</string>
+    <string name="quota_permission_missing_desc" translatable="false">未开启时学习奖励不会到账，点这里去系统设置开启</string>
+    <string name="quota_permission_ok" translatable="false">使用情况访问权限已开启</string>
+    <string name="quota_permission_ok_desc" translatable="false">只读取各应用的使用时长，不读取任何内容</string>
 </resources>

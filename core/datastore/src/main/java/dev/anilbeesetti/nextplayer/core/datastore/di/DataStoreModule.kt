@@ -7,6 +7,7 @@ import androidx.datastore.dataStoreFile
 import dev.anilbeesetti.nextplayer.core.common.di.DiQualifiers
 import dev.anilbeesetti.nextplayer.core.common.di.DispatchersModule
 import dev.anilbeesetti.nextplayer.core.datastore.serializer.ApplicationPreferencesSerializer
+import dev.anilbeesetti.nextplayer.core.datastore.serializer.DailyQuotaSerializer
 import dev.anilbeesetti.nextplayer.core.datastore.serializer.LicenseSerializer
 import dev.anilbeesetti.nextplayer.core.datastore.serializer.ParentPinSerializer
 import dev.anilbeesetti.nextplayer.core.datastore.serializer.PlayerPreferencesSerializer
@@ -14,6 +15,7 @@ import dev.anilbeesetti.nextplayer.core.datastore.serializer.SearchHistorySerial
 import dev.anilbeesetti.nextplayer.core.datastore.serializer.StudyProgressSerializer
 import dev.anilbeesetti.nextplayer.core.datastore.serializer.RestProgressSerializer
 import dev.anilbeesetti.nextplayer.core.model.ApplicationPreferences
+import dev.anilbeesetti.nextplayer.core.model.DailyQuotaProgress
 import dev.anilbeesetti.nextplayer.core.model.LicenseData
 import dev.anilbeesetti.nextplayer.core.model.ParentPinData
 import dev.anilbeesetti.nextplayer.core.model.PlayerPreferences
@@ -32,6 +34,7 @@ private const val PLAYER_PREFERENCES_DATASTORE_FILE = "player_preferences.json"
 private const val SEARCH_HISTORY_DATASTORE_FILE = "search_history.json"
 private const val STUDY_PROGRESS_DATASTORE_FILE = "study.json"
 private const val REST_PROGRESS_DATASTORE_FILE = "rest.json"
+private const val DAILY_QUOTA_DATASTORE_FILE = "quota.json"
 private const val LICENSE_DATASTORE_FILE = "license.json"
 private const val PARENT_PIN_DATASTORE_FILE = "parent_pin.json"
 
@@ -97,6 +100,18 @@ class DataStoreModule {
         serializer = RestProgressSerializer,
         scope = CoroutineScope(scope.coroutineContext + ioDispatcher),
         produceFile = { applicationContext.dataStoreFile(REST_PROGRESS_DATASTORE_FILE) },
+    )
+
+    @Single
+    @Named(DiQualifiers.DAILY_QUOTA)
+    fun provideDailyQuotaDataStore(
+        applicationContext: Context,
+        @Named(DiQualifiers.IO_DISPATCHER) ioDispatcher: CoroutineDispatcher,
+        @Named(DiQualifiers.APPLICATION_SCOPE) scope: CoroutineScope,
+    ): DataStore<DailyQuotaProgress> = DataStoreFactory.create(
+        serializer = DailyQuotaSerializer,
+        scope = CoroutineScope(scope.coroutineContext + ioDispatcher),
+        produceFile = { applicationContext.dataStoreFile(DAILY_QUOTA_DATASTORE_FILE) },
     )
 
     @Single

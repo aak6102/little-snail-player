@@ -15,6 +15,8 @@ import dev.anilbeesetti.nextplayer.settings.navigation.mediaLibraryPreferencesEn
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToAboutPreferences
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToAppearancePreferences
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToAudioPreferences
+import dev.anilbeesetti.nextplayer.settings.navigation.dailyQuotaEntry
+import dev.anilbeesetti.nextplayer.settings.navigation.navigateToDailyQuota
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToFolderPreferencesScreen
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToGeneralPreferences
 import dev.anilbeesetti.nextplayer.settings.navigation.navigateToGesturePreferences
@@ -90,6 +92,10 @@ fun EntryProviderScope<NavKey>.settingsNavGraph(
         backStack = backStack,
         onNavigateUp = { backStack.removeLastIfNotRoot() },
         onNavigateToReport = backStack::navigateToStudyReport,
+        onNavigateToQuota = backStack::navigateToDailyQuota,
+    )
+    dailyQuotaEntry(
+        onNavigateUp = { backStack.removeLastIfNotRoot() },
     )
     studyReportEntry(
         onNavigateUp = { backStack.removeLastIfNotRoot() },

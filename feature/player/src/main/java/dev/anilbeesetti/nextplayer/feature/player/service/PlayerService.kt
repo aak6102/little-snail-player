@@ -81,6 +81,8 @@ import dev.anilbeesetti.nextplayer.feature.player.extensions.withExternalAudio
 import dev.anilbeesetti.nextplayer.feature.player.model.DecoderTrackType
 import dev.anilbeesetti.nextplayer.feature.player.study.QuizGate
 import dev.anilbeesetti.nextplayer.feature.player.study.RestGuard
+import dev.anilbeesetti.nextplayer.feature.player.study.quota.QuotaGuard
+import dev.anilbeesetti.nextplayer.feature.player.study.quota.QuotaPhase
 import dev.anilbeesetti.nextplayer.feature.player.utils.isExplicitPlaylistItem
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderManager
 import io.github.anilbeesetti.nextlib.media3ext.ffdecoder.DecoderMode
@@ -125,11 +127,21 @@ class PlayerService : MediaSessionService() {
 
     private val restGuard: RestGuard by inject()
 
+    private val quotaGuard: QuotaGuard by inject()
+
     private val studyRepository: StudyRepository by inject()
 
     private val licenseRepository: LicenseRepository by inject()
 
     private var quizTickerJob: Job? = null
+
+    /**
+     * 这次暂停是不是「额度用完」替孩子按的。
+     *
+     * 用来区分「软件停的」和「孩子自己停的」：只有前者会在额度补上后自动续播。
+     * 不区分的话，孩子自己暂停着去学习，回来自动又播起来，会显得很不受控。
+     */
+    private var pausedByQuota: Boolean = false
 
     private val playerPreferences: PlayerPreferences
         get() = preferencesRepository.playerPreferences.value
@@ -236,6 +248,8 @@ class PlayerService : MediaSessionService() {
             isMediaItemReady = false
             loadArtworkForCurrentMediaItem()
             restorePendingQuizLockOnce()
+            // 换片时顺手结算一次：孩子可能是在别的 App 里学完直接切过来选集数的
+            quotaGuard.settleIfDue()
             mediaItem?.mediaMetadata?.let { metadata ->
                 mediaSession?.player?.run {
                     playerSpecificSubtitleDelayMilliseconds = metadata.subtitleDelayMilliseconds ?: 0L
@@ -745,6 +759,20 @@ class PlayerService : MediaSessionService() {
                 val progressing = player.isPlaying && player.playbackState == Player.STATE_READY
                 quizGate.onTick(if (progressing) QUIZ_TICK_INTERVAL_MS else 0L)
                 restGuard.onTick(progressing)
+                quotaGuard.onTick(if (progressing) QUIZ_TICK_INTERVAL_MS else 0L)
+                // 额度用完必须真的把播放停掉。只在 UI 层压一层遮罩是挡不住耳机线控、
+                // 通知栏按钮和车机的——「到点自动暂停」这句话要成立，就得在服务层动手。
+                val quotaPhase = quotaGuard.state.value.phase
+                if (quotaPhase == QuotaPhase.EXHAUSTED && player.isPlaying) {
+                    pausedByQuota = true
+                    player.pause()
+                } else if (pausedByQuota && quotaPhase != QuotaPhase.EXHAUSTED) {
+                    // 额度被学习奖励补上了（EXHAUSTED → ACTIVE）：把刚才那一停接回来。
+                    // 这一停是软件替孩子按的，不是他自己的意愿；他为了换时长特意去学了，
+                    // 回来还要自己再点一次播放，等于让奖励打了一次折。
+                    pausedByQuota = false
+                    player.play()
+                }
             }
         }
     }
@@ -847,6 +875,10 @@ class PlayerService : MediaSessionService() {
         startQuizTicker()
         // 防沉迷：恢复窗口历史（杀进程重进仍记得「已经看了多久」），随后由 ticker 持续计时
         restGuard.restore()
+        // 每日额度：恢复今日累计，并立刻结算一次学习奖励——
+        // 孩子刚学完就点进来，这一刻的查询就能读到那段时长（事件已落盘，不需要重启进程）
+        quotaGuard.reload()
+        quotaGuard.settleIfDue()
     }
 
     override fun onTaskRemoved(rootIntent: Intent?) {

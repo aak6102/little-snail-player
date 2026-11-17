@@ -196,12 +196,27 @@ private fun ParentPreferencesScreenContent(
             Column(
                 verticalArrangement = Arrangement.spacedBy(ListItemDefaults.SegmentedGap),
             ) {
+                // 额度入口放在报告之前：它是唯一需要定期回来看一眼的配置
+                // （孩子今天换了多少时长、还剩多少），而报告是事后复盘。
+                ClickablePreferenceItem(
+                    title = stringResource(R.string.quota_settings_title),
+                    description = if (state.quotaEnabled) {
+                        stringResource(
+                            R.string.quota_settings_entry_desc,
+                            state.quotaRemainingMinutes,
+                        )
+                    } else {
+                        stringResource(R.string.quota_settings_entry_desc_off)
+                    },
+                    icon = NextIcons.Timer,
+                    onClick = { onAction(ParentPreferencesUiEvent.OpenQuota) },
+                    isFirstItem = true,
+                )
                 ClickablePreferenceItem(
                     title = stringResource(R.string.study_report),
                     description = stringResource(R.string.study_report_entry_description),
                     icon = NextIcons.DashBoard,
                     onClick = { onAction(ParentPreferencesUiEvent.OpenReport) },
-                    isFirstItem = true,
                     isLastItem = true,
                 )
             }

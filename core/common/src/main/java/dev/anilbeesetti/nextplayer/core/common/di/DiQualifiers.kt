@@ -9,6 +9,7 @@ object DiQualifiers {
     const val SEARCH_HISTORY = "searchHistory"
     const val STUDY_PROGRESS = "studyProgress"
     const val REST_PROGRESS = "restProgress"
+    const val DAILY_QUOTA = "dailyQuota"
     const val LICENSE = "license"
     const val PARENT_PIN = "parentPin"
 }
