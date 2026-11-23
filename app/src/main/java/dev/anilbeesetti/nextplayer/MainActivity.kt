@@ -85,6 +85,7 @@ import dev.anilbeesetti.nextplayer.core.ui.components.LocalTopLevelFabSetter
 import dev.anilbeesetti.nextplayer.core.ui.components.TopLevelFabState
 import dev.anilbeesetti.nextplayer.core.ui.components.thenIf
 import dev.anilbeesetti.nextplayer.core.ui.theme.NextPlayerTheme
+import dev.anilbeesetti.nextplayer.feature.player.study.quota.QuotaGuard
 import dev.anilbeesetti.nextplayer.navigation.NextNavigationBar
 import dev.anilbeesetti.nextplayer.navigation.NextNavigationRail
 import dev.anilbeesetti.nextplayer.navigation.TopLevelDestination
@@ -109,6 +110,20 @@ class MainActivity : FragmentActivity() {
     private val viewModel: MainViewModel by viewModel()
 
     private val updateManager: UpdateManager by inject()
+
+    private val quotaGuard: QuotaGuard by inject()
+
+    /**
+     * 回到应用（列表页）也结算一次学习奖励。
+     *
+     * 只在播放页结算是不够的：未开后台播放时，孩子点「去学习」会让播放器结束会话，
+     * 回来后落在列表页——那条路径上原本没有任何结算点，于是「学完了、额度没涨」
+     * 会一直显示到孩子下一次真正点开视频。
+     */
+    override fun onStart() {
+        super.onStart()
+        quotaGuard.settleIfDue()
+    }
 
     private var pendingPlaylistId by mutableStateOf<Long?>(null)
 

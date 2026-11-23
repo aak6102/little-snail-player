@@ -155,6 +155,20 @@ fun lowBalanceStepFor(remainingMs: Long, preferences: DailyQuotaPreferences): In
 }
 
 /**
+ * 判定某一天是不是周末（周六、周日）。
+ *
+ * 只认「周六周日」，不认法定节假日与调休：调休表需要联网更新，且每年都变，
+ * 放在客户端里迟早会过期，过期后家长看到的就是「今天明明是假期却按上学日算」。
+ * 寒暑假、法定假期由家长手动把周内那档调高即可。
+ */
+fun isWeekendDay(nowMs: Long): Boolean {
+    val calendar = java.util.Calendar.getInstance()
+    calendar.timeInMillis = nowMs
+    val dayOfWeek = calendar.get(java.util.Calendar.DAY_OF_WEEK)
+    return dayOfWeek == java.util.Calendar.SATURDAY || dayOfWeek == java.util.Calendar.SUNDAY
+}
+
+/**
  * 当天 00:00 的时间戳（本地时区）。
  *
  * 用 `Calendar` 而不是「now 减去对 24 小时取模」：夏令时与跨时区旅行会让
@@ -168,4 +182,53 @@ fun startOfDayMs(nowMs: Long): Long {
     calendar.set(java.util.Calendar.SECOND, 0)
     calendar.set(java.util.Calendar.MILLISECOND, 0)
     return calendar.timeInMillis
+}
+
+/**
+ * 一条奖励方案今天的进度，用于锁屏和设置页回答「还差多少」。
+ *
+ * 没有这个，「今天的额度用完了」只是一句判决：孩子不知道自己离解锁还有多远，
+ * 家长也无从判断是「孩子没学」还是「系统没算到」——后者在真机上确实发生过，
+ * 而当时界面上没有任何数字能让人看出区别。
+ */
+data class StudyRewardProgress(
+    val ruleId: String,
+    val packageName: String,
+    val appLabel: String,
+    /** 今天在这个 App 上已计得的分钟数（向下取整，只用于展示）。 */
+    val usedMinutes: Int,
+    /** 达标所需的分钟数。 */
+    val requiredMinutes: Int,
+    /** 达标后能换到的分钟数。 */
+    val rewardMinutes: Int,
+    /** 这条规则今天是否已经发放过。 */
+    val granted: Boolean,
+) {
+    /** 还差多少分钟达标；已达标则为 0。 */
+    val missingMinutes: Int
+        get() = (requiredMinutes - usedMinutes).coerceAtLeast(0)
+}
+
+/**
+ * 按方案表算今日进度。
+ *
+ * 用**向下取整**展示已用分钟：说「已用 29 分钟」而实际 29 分 50 秒，孩子再学 10 秒
+ * 就到账，这与直觉一致；若向上取整成 30，界面上会先显示「已满 30 分钟」却不发放，
+ * 看起来就像 Bug。
+ */
+fun studyRewardProgress(
+    preferences: DailyQuotaPreferences,
+    usageMsByPackage: Map<String, Long>,
+    granted: Map<String, Int>,
+): List<StudyRewardProgress> = preferences.activeRules.map { rule ->
+    val usedMs = usageMsByPackage[rule.packageName] ?: 0L
+    StudyRewardProgress(
+        ruleId = rule.id,
+        packageName = rule.packageName,
+        appLabel = rule.appLabel.ifBlank { rule.packageName },
+        usedMinutes = (usedMs / 60_000L).toInt(),
+        requiredMinutes = rule.requiredMinutesClamped,
+        rewardMinutes = rule.rewardMinutesClamped,
+        granted = rule.id in granted,
+    )
 }

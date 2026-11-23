@@ -16,6 +16,17 @@ class DailyQuotaTest {
 
     private fun at(minute: Int): Long = minute * 60_000L
 
+    /** 固定日期的时间戳，避免用例随「今天星期几」飘。2026-11-17 是周二。 */
+    private fun dateAt(year: Int, month: Int, day: Int, hour: Int = 12): Long {
+        val calendar = java.util.Calendar.getInstance()
+        calendar.clear()
+        calendar.set(year, month - 1, day, hour, 0, 0)
+        return calendar.timeInMillis
+    }
+
+    private val weekday: Long = dateAt(2026, 11, 17)
+    private val weekend: Long = dateAt(2026, 11, 21)
+
     private val self = "dev.anilbeesetti.nextplayer"
 
     private fun rule(
@@ -110,7 +121,7 @@ class DailyQuotaTest {
         val grants = grantEligibleRules(prefs, mapOf("com.learn.a" to at(65)), emptyMap())
         assertEquals(mapOf("a30" to 15, "a60" to 30), grants)
         // 基本 20 + 奖励 45 = 65 分钟
-        assertEquals(20 + 45, prefs.totalMinutesFor(grants.values.sum()))
+        assertEquals(20 + 45, prefs.totalMinutesFor(grants.values.sum(), weekday))
     }
 
     @Test
@@ -185,7 +196,7 @@ class DailyQuotaTest {
         val rolled = progress.rollToDay("2026-11-16")
         assertEquals("2026-11-17", rolled.date)
         assertEquals(at(20), rolled.watchedMs)
-        assertTrue(rolled.isExhausted)
+        assertTrue(rolled.isExhaustedAt(weekday))
     }
 
     @Test
@@ -200,7 +211,7 @@ class DailyQuotaTest {
         val next = progress.withWatched(1_000L, "2026-11-17")
         assertEquals("2026-11-17", next.date)
         assertEquals(1_000L, next.watchedMs)
-        assertFalse(next.isExhausted)
+        assertFalse(next.isExhaustedAt(weekday))
     }
 
     @Test
@@ -212,8 +223,8 @@ class DailyQuotaTest {
             maxSeenDayKey = "2026-11-17",
         )
         // 还剩 30 秒，显示「1 分钟」而不是「0 分钟」
-        assertEquals(1, progress.remainingMinutes)
-        assertFalse(progress.isExhausted)
+        assertEquals(1, progress.remainingMinutesAt(weekday))
+        assertFalse(progress.isExhaustedAt(weekday))
     }
 
     @Test
@@ -254,8 +265,70 @@ class DailyQuotaTest {
     fun `默认基本时长是 20 分钟`() {
         val prefs = DailyQuotaPreferences()
         assertEquals(20, prefs.baseMinutesClamped)
+        assertEquals(40, prefs.weekendBaseMinutesClamped)
         assertEquals(5, prefs.noticeIntervalMinutesClamped)
         assertEquals(120, prefs.maxRewardMinutesClamped)
         assertFalse(prefs.enabled)
+    }
+
+    @Test
+    fun `周末按周末那档算基本时长`() {
+        val prefs = DailyQuotaPreferences(baseMinutes = 20, weekendBaseMinutes = 45)
+        assertEquals(20, prefs.totalMinutesFor(0, weekday))
+        assertEquals(45, prefs.totalMinutesFor(0, weekend))
+        // 奖励部分与当天的档位叠加，不受档位切换影响
+        assertEquals(45 + 15, prefs.totalMinutesFor(15, weekend))
+        assertEquals(20 + 15, prefs.totalMinutesFor(15, weekday))
+    }
+
+    @Test
+    fun `周末判定只认周六周日`() {
+        assertFalse(isWeekendDay(weekday))
+        assertTrue(isWeekendDay(weekend))
+        assertTrue(isWeekendDay(dateAt(2026, 11, 22)))
+    }
+
+    @Test
+    fun `达标时长下限是 1 分钟`() {
+        val rule = StudyRewardRule(
+            id = "a1",
+            packageName = "com.learn.a",
+            appLabel = "学习 A",
+            requiredMinutes = 0,
+            rewardMinutes = 5,
+        )
+        assertEquals(1, rule.requiredMinutesClamped)
+        val prefs = DailyQuotaPreferences(enabled = true, rewardRules = listOf(rule))
+        // 学满 1 分钟就发，这正是「低龄孩子 3 分钟一节小课」能配出方案的前提
+        assertEquals(mapOf("a1" to 5), grantEligibleRules(prefs, mapOf("com.learn.a" to at(1)), emptyMap()))
+        // 差 1 秒都不发
+        assertTrue(
+            grantEligibleRules(prefs, mapOf("com.learn.a" to at(1) - 1_000L), emptyMap()).isEmpty(),
+        )
+    }
+
+    @Test
+    fun `学习进度给出已用分钟与还差多少`() {
+        val rule = rule("a30", required = 30, reward = 15)
+        val prefs = DailyQuotaPreferences(rewardRules = listOf(rule))
+        val progress = studyRewardProgress(
+            preferences = prefs,
+            usageMsByPackage = mapOf("com.learn.a" to at(12) + 40_000L),
+            granted = emptyMap(),
+        )
+        assertEquals(1, progress.size)
+        // 已用分钟向下取整：12 分 40 秒显示 12 分钟，与「再学 18 分钟就到账」一致
+        assertEquals(12, progress.first().usedMinutes)
+        assertEquals(18, progress.first().missingMinutes)
+        assertFalse(progress.first().granted)
+    }
+
+    @Test
+    fun `未达标的规则在锁屏上显示还差多少`() {
+        val rule = rule("a30", required = 30, reward = 15)
+        val prefs = DailyQuotaPreferences(rewardRules = listOf(rule))
+        val granted = studyRewardProgress(prefs, mapOf("com.learn.a" to at(40)), mapOf("a30" to 15))
+        assertTrue(granted.first().granted)
+        assertEquals(0, granted.first().missingMinutes)
     }
 }

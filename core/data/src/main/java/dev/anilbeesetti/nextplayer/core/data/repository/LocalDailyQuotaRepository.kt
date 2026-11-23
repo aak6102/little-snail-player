@@ -53,16 +53,20 @@ class LocalDailyQuotaRepository(
         dailyQuotaDataSource.update { current ->
             // 结算与换天放在同一次 update 里，避免「换天清了 granted」与「读取旧 granted」交错
             // 导致同一份奖励发两次。
-            val rolled = current.rollToDay(today).let { r ->
+            val rolled = current.rollToDay(today)
+            // 是否该发，只认磁盘上的这份配置。调用方（QuotaGuard）在冷启动瞬间拿到的
+            // 内存快照还是默认值，用它判断会把整次结算静默跳过。
+            if (!rolled.preferences.enabled || rolled.preferences.activeRules.isEmpty()) {
+                if (rolled.lastSettledAtMs == nowMs) rolled else rolled.copy(lastSettledAtMs = nowMs)
+            } else {
                 val fresh = grantEligibleRules(
-                    preferences = r.preferences,
+                    preferences = rolled.preferences,
                     usageMsByPackage = usageMsByPackage,
-                    alreadyGranted = r.granted,
+                    alreadyGranted = rolled.granted,
                 )
                 grantedNow = fresh
-                r.withGrants(fresh, nowMs).copy(lastSettledAtMs = nowMs)
+                rolled.withGrants(fresh, nowMs).copy(lastSettledAtMs = nowMs)
             }
-            rolled
         }
         return grantedNow
     }

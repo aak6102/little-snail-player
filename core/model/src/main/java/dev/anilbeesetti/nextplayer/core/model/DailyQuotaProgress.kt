@@ -44,17 +44,21 @@ data class DailyQuotaProgress(
     val maxSeenDayKey: String = "",
 ) {
 
-    /** 已发放的奖励总分钟数（未截断，截断在 [totalMs] 里做）。 */
+    /** 已发放的奖励总分钟数（未截断，截断在 [totalMsAt] 里做）。 */
     val grantedMinutes: Int
         get() = granted.values.sum()
 
-    /** 今日总上限（毫秒）：基本时长 + 奖励，奖励部分受 `maxRewardMinutes` 截断。 */
-    val totalMs: Long
-        get() = preferences.totalMinutesFor(grantedMinutes) * 60_000L
+    /**
+     * 今日总上限（毫秒）：当天档位的基本时长 + 奖励，奖励部分受 `maxRewardMinutes` 截断。
+     *
+     * 必须带时刻：基本时长有周内/周末两档，脱离「今天几号」算不出正确上限。
+     */
+    fun totalMsAt(nowMs: Long): Long =
+        preferences.totalMinutesFor(grantedMinutes, nowMs) * 60_000L
 
     /** 今日剩余（毫秒），不为负。 */
-    val remainingMs: Long
-        get() = (totalMs - watchedMs).coerceAtLeast(0L)
+    fun remainingMsAt(nowMs: Long): Long =
+        (totalMsAt(nowMs) - watchedMs).coerceAtLeast(0L)
 
     /** 今日已看的整分钟数（向下取整，用于「已看 25 分钟」这种展示）。 */
     val watchedMinutes: Int
@@ -66,15 +70,15 @@ data class DailyQuotaProgress(
      * 向上取整而不是向下：剩 30 秒时显示「还剩 1 分钟」比「还剩 0 分钟」诚实，
      * 后者会让家长以为已经被锁了，实际还能看完这半分钟。
      */
-    val remainingMinutes: Int
-        get() = ((remainingMs + 59_999L) / 60_000L).toInt()
+    fun remainingMinutesAt(nowMs: Long): Int =
+        ((remainingMsAt(nowMs) + 59_999L) / 60_000L).toInt()
 
     val isEnabled: Boolean
         get() = preferences.enabled
 
     /** 是否已耗尽。只有开关打开时才成立——关掉开关不该因为旧数据把播放器锁住。 */
-    val isExhausted: Boolean
-        get() = isEnabled && watchedMs >= totalMs
+    fun isExhaustedAt(nowMs: Long): Boolean =
+        isEnabled && watchedMs >= totalMsAt(nowMs)
 
     /** 还没达标、也没发过的规则，用于锁屏上提示「去学什么还能再换多少」。 */
     fun pendingRules(): List<StudyRewardRule> =

@@ -19,12 +19,20 @@ data class DailyQuotaPreferences(
     /** 总开关。关掉等于这一层不存在，已发放的奖励保留但不生效。 */
     val enabled: Boolean = false,
     /**
-     * 基本时长（分钟）——不看任何学习 App 也能拿到的那部分。
+     * 基本时长（分钟）——**周一至周五**不看任何学习 App 也能拿到的那部分。
      *
      * 默认 20 分钟：一集动画片左右，够「看一集」这个最基本的需求，
      * 又不至于让家长觉得「不开也没影响」从而永远不去配奖励。
      */
     val baseMinutes: Int = DEFAULT_BASE_MINUTES,
+    /**
+     * 周末（周六、周日）的基本时长，默认 40 分钟。
+     *
+     * 拆成两档是因为一个数字伺候不了两种日子：按上学日给，周末一天根本不够；
+     * 按周末给，上学日又太松。单独一档之后，「平时 20、周末 40」这种最常见的
+     * 家庭规则可以直接表达，不必每天手动去改。
+     */
+    val weekendBaseMinutes: Int = DEFAULT_WEEKEND_BASE_MINUTES,
     /** 奖励方案，0..N 条。同一 App 可以配多条阶梯（学 30 → +15、学 60 → +30）。 */
     val rewardRules: List<StudyRewardRule> = emptyList(),
     /**
@@ -55,6 +63,9 @@ data class DailyQuotaPreferences(
     val baseMinutesClamped: Int
         get() = baseMinutes.coerceIn(MIN_BASE_MINUTES, MAX_BASE_MINUTES)
 
+    val weekendBaseMinutesClamped: Int
+        get() = weekendBaseMinutes.coerceIn(MIN_BASE_MINUTES, MAX_BASE_MINUTES)
+
     val maxRewardMinutesClamped: Int
         get() = maxRewardMinutes.coerceIn(MIN_MAX_REWARD_MINUTES, MAX_MAX_REWARD_MINUTES)
 
@@ -70,13 +81,20 @@ data class DailyQuotaPreferences(
     val activeRules: List<StudyRewardRule>
         get() = rewardRules.filter { it.enabled && it.packageName.isNotBlank() }
 
-    /** 今日上限（分钟）：基本时长 + 已发放奖励，后者被 [maxRewardMinutesClamped] 截断。 */
-    fun totalMinutesFor(grantedMinutes: Int): Int =
-        baseMinutesClamped + grantedMinutes.coerceIn(0, maxRewardMinutesClamped)
+    /** 今天该用哪一档基本时长：周六、周日取 [weekendBaseMinutes]，其余取 [baseMinutes]。 */
+    fun baseMinutesFor(nowMs: Long): Int =
+        if (isWeekendDay(nowMs)) weekendBaseMinutesClamped else baseMinutesClamped
+
+    /** 今日上限（分钟）：当天档位的基本时长 + 已发放奖励，后者被 [maxRewardMinutesClamped] 截断。 */
+    fun totalMinutesFor(grantedMinutes: Int, nowMs: Long): Int =
+        baseMinutesFor(nowMs) + grantedMinutes.coerceIn(0, maxRewardMinutesClamped)
 
     companion object {
-        /** 默认基本时长：一集动画片。 */
+        /** 默认基本时长：一集动画片（周一至周五）。 */
         const val DEFAULT_BASE_MINUTES = 20
+
+        /** 默认周末基本时长。比周内多一倍，是「周末可以多看一会儿」的多数家庭口径。 */
+        const val DEFAULT_WEEKEND_BASE_MINUTES = 40
 
         const val DEFAULT_MAX_REWARD_MINUTES = 120
 
@@ -98,8 +116,8 @@ data class DailyQuotaPreferences(
         /** 设置页预设值。默认 20 排在第一位，家长多数情况点一下就完事。 */
         val ALLOWED_BASE_MINUTES = listOf(20, 30, 45, 60, 90, 120)
 
-        /** 0 表示关闭提醒。 */
-        val ALLOWED_NOTICE_INTERVALS = listOf(0, 5, 10, 15, 20, 30)
+        /** 0 表示关闭提醒。1 分钟档用于「随时看得见还剩多少」的家长。 */
+        val ALLOWED_NOTICE_INTERVALS = listOf(0, 1, 5, 10, 15, 20, 30)
 
         /** 低余额必提醒的档位（剩余分钟），从大到小。 */
         val LOW_BALANCE_STEPS = listOf(10, 5, 1)
@@ -153,8 +171,14 @@ data class StudyRewardRule(
 
         const val DEFAULT_REWARD_MINUTES = 15
 
-        /** 下限 5 分钟：再短的「学习」没有意义，只是点开又关掉。 */
-        const val MIN_REQUIRED_MINUTES = 5
+        /**
+         * 下限 1 分钟。
+         *
+         * 早先设成 5 分钟是担心「点开又关掉也算学习」，但那条规则应该由家长定：
+         * 有些低龄孩子本来就用的是 3 分钟一节的识字/口算小课，5 分钟起会让这类
+         * 学习 App 根本配不出方案。下限放到 1 分钟，把判断权交回家长。
+         */
+        const val MIN_REQUIRED_MINUTES = 1
 
         /** 10 小时，同基本时长的防手滑上限。 */
         const val MAX_REQUIRED_MINUTES = 600
@@ -164,7 +188,7 @@ data class StudyRewardRule(
         /** 单条最多 3 小时。再多就该拆成多条阶梯，而不是一条通吃。 */
         const val MAX_REWARD_MINUTES = 180
 
-        val ALLOWED_REQUIRED_MINUTES = listOf(15, 20, 30, 45, 60, 90)
+        val ALLOWED_REQUIRED_MINUTES = listOf(1, 5, 10, 15, 20, 30, 45, 60, 90)
 
         val ALLOWED_REWARD_MINUTES = listOf(5, 10, 15, 20, 30, 45)
     }

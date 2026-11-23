@@ -117,10 +117,26 @@ private fun DailyQuotaScreenContent(
 
                 if (state.enabled) {
                     ClickablePreferenceItem(
-                        title = stringResource(id = R.string.quota_base),
-                        description = stringResource(id = R.string.quota_base_value, state.baseMinutes),
+                        title = stringResource(id = R.string.quota_base_weekday),
+                        description = stringResource(
+                            id = R.string.quota_base_value,
+                            state.weekdayBaseMinutes,
+                        ),
                         icon = NextIcons.Calendar,
-                        onClick = { onAction(DailyQuotaUiEvent.ShowDialog(DailyQuotaDialog.BaseMinutes)) },
+                        onClick = {
+                            onAction(DailyQuotaUiEvent.ShowDialog(DailyQuotaDialog.BaseWeekday))
+                        },
+                    )
+                    ClickablePreferenceItem(
+                        title = stringResource(id = R.string.quota_base_weekend),
+                        description = stringResource(
+                            id = R.string.quota_base_value,
+                            state.weekendBaseMinutes,
+                        ),
+                        icon = NextIcons.Calendar,
+                        onClick = {
+                            onAction(DailyQuotaUiEvent.ShowDialog(DailyQuotaDialog.BaseWeekend))
+                        },
                     )
                     ClickablePreferenceItem(
                         title = stringResource(id = R.string.quota_max_reward),
@@ -177,15 +193,21 @@ private fun DailyQuotaScreenContent(
                 } else {
                     state.rules.forEachIndexed { index, rule ->
                         val granted = state.grantedFor(rule.id)
-                        val ruleText = stringResourcedRule(rule)
-                        val grantedText = if (granted > 0) {
-                            stringResource(id = R.string.quota_rule_granted, granted)
-                        } else {
-                            null
+                        val used = state.usedFor(rule.id)
+                        // 一行里同时给三件事：规则本身、今天系统算到多少、今天是否已到账。
+                        // 少任何一个，「学满了不给时长」这类反馈都无法在设置页自查。
+                        val parts = buildList {
+                            add(stringResourcedRule(rule))
+                            if (used != null) {
+                                add(stringResource(id = R.string.quota_rule_used, used))
+                            }
+                            if (granted > 0) {
+                                add(stringResource(id = R.string.quota_rule_granted, granted))
+                            }
                         }
                         ClickablePreferenceItem(
                             title = rule.appLabel.ifBlank { rule.packageName },
-                            description = if (grantedText != null) "$ruleText · $grantedText" else ruleText,
+                            description = parts.joinToString(" · "),
                             icon = NextIcons.Headset,
                             onClick = {
                                 onAction(
@@ -238,16 +260,31 @@ private fun DailyQuotaScreenContent(
 
     state.dialog?.let { dialog ->
         when (dialog) {
-            DailyQuotaDialog.BaseMinutes -> NumberOptionDialog(
-                title = stringResource(id = R.string.quota_base),
+            DailyQuotaDialog.BaseWeekday -> NumberOptionDialog(
+                title = stringResource(id = R.string.quota_base_weekday),
                 presets = DailyQuotaPreferences.ALLOWED_BASE_MINUTES,
-                current = state.baseMinutes,
+                current = state.weekdayBaseMinutes,
                 min = DailyQuotaPreferences.MIN_BASE_MINUTES,
                 max = DailyQuotaPreferences.MAX_BASE_MINUTES,
                 unit = stringResource(id = R.string.parent_number_unit_minutes),
                 label = { stringResource(id = R.string.quota_base_value, it) },
                 onConfirm = {
-                    onAction(DailyQuotaUiEvent.SetBaseMinutes(it))
+                    onAction(DailyQuotaUiEvent.SetWeekdayBase(it))
+                    onAction(DailyQuotaUiEvent.ShowDialog(null))
+                },
+                onDismissClick = { onAction(DailyQuotaUiEvent.ShowDialog(null)) },
+            )
+
+            DailyQuotaDialog.BaseWeekend -> NumberOptionDialog(
+                title = stringResource(id = R.string.quota_base_weekend),
+                presets = DailyQuotaPreferences.ALLOWED_BASE_MINUTES,
+                current = state.weekendBaseMinutes,
+                min = DailyQuotaPreferences.MIN_BASE_MINUTES,
+                max = DailyQuotaPreferences.MAX_BASE_MINUTES,
+                unit = stringResource(id = R.string.parent_number_unit_minutes),
+                label = { stringResource(id = R.string.quota_base_value, it) },
+                onConfirm = {
+                    onAction(DailyQuotaUiEvent.SetWeekendBase(it))
                     onAction(DailyQuotaUiEvent.ShowDialog(null))
                 },
                 onDismissClick = { onAction(DailyQuotaUiEvent.ShowDialog(null)) },

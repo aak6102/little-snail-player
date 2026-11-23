@@ -114,7 +114,7 @@ fun QuotaExhaustedOverlay(
     if (state.phase != QuotaPhase.EXHAUSTED) return
 
     val context = LocalContext.current
-    val pending = state.pendingRules.firstOrNull()
+    val pending = state.pendingRules
 
     Box(
         modifier = modifier
@@ -153,26 +153,56 @@ fun QuotaExhaustedOverlay(
                 textAlign = TextAlign.Center,
             )
 
-            if (pending != null) {
+            if (pending.isNotEmpty()) {
                 Spacer(Modifier.height(22.dp))
-                Text(
-                    text = stringResource(
-                        id = R.string.quota_exhausted_pending,
-                        pending.appLabel,
-                        pending.requiredMinutesClamped,
-                        pending.rewardMinutesClamped,
-                    ),
-                    color = Color(0xFF9FE1CB),
-                    fontSize = 16.sp,
-                    textAlign = TextAlign.Center,
-                )
+                // 每条待达标方案给出「已经用了多久、还差多久、达标换多少」。
+                // 只说「去学满 30 分钟」是不够的：孩子刚学完 10 分钟回来，
+                // 看到的仍是一句「学满 30 分钟」，会以为自己白学了。
+                pending.forEachIndexed { index, rule ->
+                    if (index > 0) Spacer(Modifier.height(14.dp))
+                    val progress = state.progressFor(rule.id)
+                    Text(
+                        text = if (progress == null) {
+                            stringResource(
+                                id = R.string.quota_exhausted_pending,
+                                rule.appLabel,
+                                rule.requiredMinutesClamped,
+                                rule.rewardMinutesClamped,
+                            )
+                        } else {
+                            stringResource(
+                                id = R.string.quota_exhausted_pending_progress,
+                                rule.appLabel,
+                                progress.usedMinutes,
+                                progress.missingMinutes,
+                            )
+                        },
+                        color = Color(0xFF9FE1CB),
+                        fontSize = 16.sp,
+                        fontWeight = FontWeight.Medium,
+                        textAlign = TextAlign.Center,
+                    )
+                    Text(
+                        text = stringResource(
+                            id = R.string.quota_exhausted_pending_reward,
+                            rule.requiredMinutesClamped,
+                            rule.rewardMinutesClamped,
+                        ),
+                        color = Color(0xFFB4B2A9),
+                        fontSize = 14.sp,
+                        textAlign = TextAlign.Center,
+                    )
+                }
                 Spacer(Modifier.height(14.dp))
                 Button(
-                    onClick = { launchStudyApp(context, pending.packageName) },
+                    onClick = { launchStudyApp(context, pending.first().packageName) },
                     shape = RoundedCornerShape(12.dp),
                 ) {
                     Text(
-                        text = stringResource(id = R.string.quota_exhausted_go_study),
+                        text = stringResource(
+                            id = R.string.quota_exhausted_go_study_named,
+                            pending.first().appLabel,
+                        ),
                         fontSize = 17.sp,
                     )
                 }

@@ -7,6 +7,9 @@ import dev.anilbeesetti.nextplayer.core.data.repository.InstalledApp
 import dev.anilbeesetti.nextplayer.core.model.DailyQuotaPreferences
 import dev.anilbeesetti.nextplayer.core.model.DailyQuotaProgress
 import dev.anilbeesetti.nextplayer.core.model.StudyRewardRule
+import dev.anilbeesetti.nextplayer.core.model.isWeekendDay
+import dev.anilbeesetti.nextplayer.core.model.startOfDayMs
+import dev.anilbeesetti.nextplayer.core.model.studyRewardProgress
 import dev.anilbeesetti.nextplayer.core.ui.base.MviViewModel
 import java.util.UUID
 import kotlinx.coroutines.Dispatchers
@@ -53,6 +56,7 @@ class DailyQuotaViewModel(
         }
         refreshUsageAccess()
         loadApps()
+        refreshRuleUsage()
     }
 
     override fun onAction(action: DailyQuotaUiEvent) {
@@ -63,14 +67,19 @@ class DailyQuotaViewModel(
             DailyQuotaUiEvent.RefreshUsageAccess -> {
                 refreshUsageAccess()
                 loadApps()
+                refreshRuleUsage()
             }
 
             is DailyQuotaUiEvent.ShowDialog -> {
                 stateInternal.update { it.copy(dialog = action.dialog) }
             }
 
-            is DailyQuotaUiEvent.SetBaseMinutes -> updatePreferences {
+            is DailyQuotaUiEvent.SetWeekdayBase -> updatePreferences {
                 it.copy(baseMinutes = action.minutes)
+            }
+
+            is DailyQuotaUiEvent.SetWeekendBase -> updatePreferences {
+                it.copy(weekendBaseMinutes = action.minutes)
             }
 
             is DailyQuotaUiEvent.SetMaxReward -> updatePreferences {
@@ -102,20 +111,48 @@ class DailyQuotaViewModel(
 
     private fun publish(progress: DailyQuotaProgress) {
         val prefs = progress.preferences
+        val now = System.currentTimeMillis()
         stateInternal.update { current ->
             current.copy(
                 enabled = prefs.enabled,
-                baseMinutes = prefs.baseMinutesClamped,
+                weekdayBaseMinutes = prefs.baseMinutesClamped,
+                weekendBaseMinutes = prefs.weekendBaseMinutesClamped,
                 maxRewardMinutes = prefs.maxRewardMinutesClamped,
                 noticeIntervalMinutes = prefs.noticeIntervalMinutesClamped,
                 rules = prefs.rewardRules,
                 watchedMinutes = progress.watchedMinutes,
-                remainingMinutes = progress.remainingMinutes,
-                totalMinutes = (progress.totalMs / 60_000L).toInt(),
+                remainingMinutes = progress.remainingMinutesAt(now),
+                totalMinutes = (progress.totalMsAt(now) / 60_000L).toInt(),
                 grantedMinutes = progress.grantedMinutes,
                 grantedByRule = progress.granted,
-                isExhausted = progress.isExhausted,
+                isExhausted = progress.isExhaustedAt(now),
+                // 今天按哪一档算，用来在两级基本时长上标出「今天用这档」。
+                isWeekend = isWeekendDay(now),
             )
+        }
+    }
+
+    /**
+     * 读一次各方案今天的学习时长。
+     *
+     * 这一页必须能自己回答「系统到底算到多少分钟」：家长报「学满了不给时长」时，
+     * 若这里显示 0，问题在权限或 ROM；若显示 30 而没到账，问题在我们的判定。
+     * 没有这个数字，两种故障在现场完全无法区分。
+     */
+    private fun refreshRuleUsage() {
+        viewModelScope.launch {
+            val progress = quotaRepository.progress.value
+            val prefs = progress.preferences
+            if (prefs.activeRules.isEmpty()) {
+                stateInternal.update { it.copy(ruleUsedMinutes = emptyMap()) }
+                return@launch
+            }
+            val now = System.currentTimeMillis()
+            val usage = withContext(Dispatchers.IO) {
+                usageReader.foregroundDurations(startOfDayMs(now), now)
+            }
+            val list = studyRewardProgress(prefs, usage, progress.granted)
+            stateInternal.update { it.copy(ruleUsedMinutes = list.associate { p -> p.ruleId to p.usedMinutes }) }
         }
     }
 
@@ -139,6 +176,9 @@ class DailyQuotaViewModel(
     private fun updatePreferences(transform: (DailyQuotaPreferences) -> DailyQuotaPreferences) {
         viewModelScope.launch {
             quotaRepository.updatePreferences(transform)
+            // 增删方案会改变「该显示哪些进度」，改完立刻重算一次，
+            // 否则新加的那条要等下次回页面才显示今日已学多少。
+            refreshRuleUsage()
         }
     }
 
@@ -202,7 +242,8 @@ sealed interface DailyQuotaUiEvent {
     data object OpenUsageAccess : DailyQuotaUiEvent
     data object RefreshUsageAccess : DailyQuotaUiEvent
     data class ShowDialog(val dialog: DailyQuotaDialog?) : DailyQuotaUiEvent
-    data class SetBaseMinutes(val minutes: Int) : DailyQuotaUiEvent
+    data class SetWeekdayBase(val minutes: Int) : DailyQuotaUiEvent
+    data class SetWeekendBase(val minutes: Int) : DailyQuotaUiEvent
     data class SetMaxReward(val minutes: Int) : DailyQuotaUiEvent
     data class SetNoticeInterval(val minutes: Int) : DailyQuotaUiEvent
     data class PickApp(val app: InstalledApp) : DailyQuotaUiEvent
@@ -227,7 +268,8 @@ sealed interface DailyQuotaUiEvent {
 }
 
 sealed interface DailyQuotaDialog {
-    data object BaseMinutes : DailyQuotaDialog
+    data object BaseWeekday : DailyQuotaDialog
+    data object BaseWeekend : DailyQuotaDialog
     data object MaxReward : DailyQuotaDialog
     data object NoticeInterval : DailyQuotaDialog
     data object PickApp : DailyQuotaDialog
@@ -252,7 +294,10 @@ sealed interface DailyQuotaDialog {
 
 data class DailyQuotaUiState(
     val enabled: Boolean = false,
-    val baseMinutes: Int = DailyQuotaPreferences.DEFAULT_BASE_MINUTES,
+    val weekdayBaseMinutes: Int = DailyQuotaPreferences.DEFAULT_BASE_MINUTES,
+    val weekendBaseMinutes: Int = DailyQuotaPreferences.DEFAULT_WEEKEND_BASE_MINUTES,
+    /** 今天是不是周末，用来在两级基本时长上标「今天用这档」。 */
+    val isWeekend: Boolean = false,
     val maxRewardMinutes: Int = DailyQuotaPreferences.DEFAULT_MAX_REWARD_MINUTES,
     val noticeIntervalMinutes: Int = DailyQuotaPreferences.DEFAULT_NOTICE_INTERVAL_MINUTES,
     val rules: List<StudyRewardRule> = emptyList(),
@@ -261,6 +306,8 @@ data class DailyQuotaUiState(
     val totalMinutes: Int = 0,
     val grantedMinutes: Int = 0,
     val grantedByRule: Map<String, Int> = emptyMap(),
+    /** ruleId → 今日已学分钟数，来自系统使用统计。 */
+    val ruleUsedMinutes: Map<String, Int> = emptyMap(),
     val isExhausted: Boolean = false,
     val hasUsageAccess: Boolean = false,
     val apps: List<InstalledApp> = emptyList(),
@@ -269,4 +316,7 @@ data class DailyQuotaUiState(
 ) {
     /** 已发放奖励对应的规则名，用于在方案行上标「今日已到账」。 */
     fun grantedFor(ruleId: String): Int = grantedByRule[ruleId] ?: 0
+
+    /** 某条方案今天已学的分钟数；没读到数据时返回 null，界面上不编造 0。 */
+    fun usedFor(ruleId: String): Int? = ruleUsedMinutes[ruleId]
 }

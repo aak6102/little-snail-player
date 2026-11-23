@@ -84,7 +84,7 @@ class ParentPreferencesViewModel(
                 stateInternal.update {
                     it.copy(
                         quotaEnabled = progress.preferences.enabled,
-                        quotaRemainingMinutes = progress.remainingMinutes,
+                        quotaRemainingMinutes = progress.remainingMinutesAt(System.currentTimeMillis()),
                     )
                 }
             }

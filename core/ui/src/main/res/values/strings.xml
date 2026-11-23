@@ -792,7 +792,10 @@
     <string name="quota_exhausted_used" translatable="false">今天一共看了 %1$d 分钟</string>
     <string name="quota_exhausted_reset" translatable="false">明天 0 点自动恢复</string>
     <string name="quota_exhausted_pending" translatable="false">去《%1$s》学满 %2$d 分钟，能再换 %3$d 分钟</string>
+    <string name="quota_exhausted_pending_progress" translatable="false">《%1$s》今天已学 %2$d 分钟 · 还差 %3$d 分钟</string>
+    <string name="quota_exhausted_pending_reward" translatable="false">学满 %1$d 分钟能再换 %2$d 分钟</string>
     <string name="quota_exhausted_go_study" translatable="false">去学习</string>
+    <string name="quota_exhausted_go_study_named" translatable="false">去《%1$s》学习</string>
     <string name="quota_exhausted_dismiss" translatable="false">关闭播放器</string>
 
     <!-- 家长设置·每日观看额度 -->
@@ -804,6 +807,8 @@
     <string name="quota_mode_desc_off" translatable="false">关闭后不限总量，奖励时长也不再计算</string>
     <string name="quota_base" translatable="false">基本时长</string>
     <string name="quota_base_value" translatable="false">每天 %1$d 分钟</string>
+    <string name="quota_base_weekday" translatable="false">基本时长（周一至周五）</string>
+    <string name="quota_base_weekend" translatable="false">基本时长（周六、周日）</string>
     <string name="quota_max_reward" translatable="false">单日奖励上限</string>
     <string name="quota_max_reward_value" translatable="false">最多再 +%1$d 分钟</string>
     <string name="quota_notice" translatable="false">定时提醒</string>
@@ -815,6 +820,7 @@
     <string name="quota_reward_empty" translatable="false">还没有方案。添加后，孩子在学习 App 上用够时间就能换视频时长</string>
     <string name="quota_rule_value" translatable="false">学满 %1$d 分钟 → +%2$d 分钟</string>
     <string name="quota_rule_granted" translatable="false">今日已到账 +%1$d 分钟</string>
+    <string name="quota_rule_used" translatable="false">今日已学 %1$d 分钟</string>
     <string name="quota_add_rule" translatable="false">添加奖励方案</string>
     <string name="quota_add_rule_desc" translatable="false">选一个学习 App，设定达标时长和奖励</string>
     <string name="quota_pick_app" translatable="false">选择学习 App</string>

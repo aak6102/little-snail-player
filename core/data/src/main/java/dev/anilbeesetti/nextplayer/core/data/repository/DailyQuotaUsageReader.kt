@@ -9,7 +9,6 @@ import android.content.pm.PackageManager
 import android.os.Process
 import dev.anilbeesetti.nextplayer.core.model.UsageEvent
 import dev.anilbeesetti.nextplayer.core.model.UsageEventType
-import dev.anilbeesetti.nextplayer.core.model.exclusiveForegroundDurations
 import dev.anilbeesetti.nextplayer.core.model.toUsageIntervals
 import org.koin.core.annotation.Single
 
@@ -33,9 +32,9 @@ interface DailyQuotaUsageReader {
     fun hasUsageAccess(): Boolean
 
     /**
-     * [sinceMs]..[untilMs] 之间各 App 的**独占**前台时长（毫秒）。
+     * [sinceMs]..[untilMs] 之间各 App 的前台时长（毫秒），口径与系统「数字健康」一致。
      *
-     * 已扣掉与本应用重叠的部分（分屏时不算边看边学），未授权时返回空表。
+     * 未授权时返回空表。
      */
     fun foregroundDurations(sinceMs: Long, untilMs: Long): Map<String, Long>
 
@@ -58,37 +57,103 @@ class AndroidDailyQuotaUsageReader(context: Context) : DailyQuotaUsageReader {
             Process.myUid(),
             appContext.packageName,
         )
-        return mode == AppOpsManager.MODE_ALLOWED
+        if (mode == AppOpsManager.MODE_ALLOWED) return true
+        // 兜底：MIUI / EMUI / ColorOS 这类自带权限管理的 ROM，用户明明在系统设置里
+        // 开了「使用情况访问」，checkOpNoThrow 仍返回 MODE_DEFAULT。只看 AppOps 会得出
+        // 「未授权」的结论，于是结算被整条跳过——表现就是孩子学满了、时长一分不涨，
+        // 而设置页还写着「已开启」。这里用一次真实查询判定：能读到数据就是有权限。
+        return probeUsageAccess()
     }
 
+    /** 真查一次：最近 7 天有任何一条使用记录，说明权限实际可用。 */
+    private fun probeUsageAccess(): Boolean {
+        val manager = appContext.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
+            ?: return false
+        return try {
+            val now = System.currentTimeMillis()
+            manager.queryUsageStats(
+                UsageStatsManager.INTERVAL_DAILY,
+                now - PROBE_WINDOW_MS,
+                now,
+            ).orEmpty().any { it.totalTimeInForeground > 0L }
+        } catch (exception: RuntimeException) {
+            false
+        }
+    }
+
+    /**
+     * 今日各 App 的前台时长。
+     *
+     * **主口径是系统自己的统计**（`queryUsageStats.totalTimeInForeground`），与系统设置里
+     * 「数字健康 / 应用使用时间」显示的完全同源。早先这里是从 `queryEvents` 事件流重建区间再
+     * 相减，真机上出现过「学满 30 分钟却算出 0」：只要本应用自身有一次 RESUMED 没配上
+     * PAUSED（进程被杀、ROM 少发事件），那条区间就会一直开到「现在」，把之后所有学习 App
+     * 的时长整个盖掉。事件流适合做「谁在前台」这种瞬时判断，不适合做时长账本。
+     *
+     * 事件流保留为**逐包兜底**：个别 ROM 的 `queryUsageStats` 有延迟或返回空，
+     * 这时用事件结果顶上（取两者较大值，宁可多算也不把孩子的学习时间吞掉）。
+     *
+     * [sinceMs]..[untilMs] 之间各 App 的前台毫秒数。
+     */
     override fun foregroundDurations(sinceMs: Long, untilMs: Long): Map<String, Long> {
-        if (!hasUsageAccess() || untilMs <= sinceMs) return emptyMap()
+        if (untilMs <= sinceMs) return emptyMap()
         val manager = appContext.getSystemService(Context.USAGE_STATS_SERVICE) as? UsageStatsManager
             ?: return emptyMap()
-        // 权限可能在检查之后、查询之前被撤销（家长在另一个界面关掉了），
-        // 这里必须兜住 SecurityException，否则一次结算就能把播放器打崩。
-        return try {
-            val events = ArrayList<UsageEvent>()
-            val usageEvents = manager.queryEvents(sinceMs, untilMs)
-            val event = UsageEvents.Event()
-            // UsageEvents 自身继承 Iterator，没有 hasNext()；getNextEvent 返回 false 即取完。
-            while (usageEvents.getNextEvent(event)) {
-                val type = when (event.eventType) {
-                    EVENT_RESUMED -> UsageEventType.FOREGROUND
-                    EVENT_PAUSED, EVENT_STOPPED -> UsageEventType.BACKGROUND
-                    else -> null
-                } ?: continue
-                val pkg = event.packageName ?: continue
-                events += UsageEvent(pkg, type, event.timeStamp)
-            }
-            exclusiveForegroundDurations(toUsageIntervals(events, untilMs), ownPackages)
+        val fromStats = try {
+            manager.queryUsageStats(UsageStatsManager.INTERVAL_DAILY, sinceMs, untilMs)
+                .orEmpty()
+                .groupBy { it.packageName }
+                .mapValues { (_, stats) -> stats.sumOf { it.totalTimeInForeground } }
+                .filterValues { it > 0L }
         } catch (exception: SecurityException) {
+            // 权限可能在检查之后、查询之前被撤销（家长在另一个界面关掉了）。
             emptyMap()
         } catch (exception: RuntimeException) {
-            // 个别 ROM 的 queryEvents 会抛 IllegalStateException 等运行时异常，
-            // 授权状态与事件库都可能不一致；结算失败最多是奖励晚点到账，不该崩。
             emptyMap()
         }
+        val fromEvents = eventBasedDurations(manager, sinceMs, untilMs)
+        if (fromStats.isEmpty()) return fromEvents
+        // 逐包取「系统统计优先，缺失才用事件兜底」：系统统计是账本，事件流只补它没有的包。
+        // 这里不做 max——事件流在真机上可能把一段没闭合的区间一路开到「现在」，
+        // 取最大值等于把多算的那几个小时也一起发给用户。
+        return (fromStats.keys + fromEvents.keys)
+            .associateWith { pkg -> fromStats[pkg]?.takeIf { it > 0L } ?: (fromEvents[pkg] ?: 0L) }
+            .filterValues { it > 0L }
+    }
+
+    /**
+     * 事件流兜底。**不再做分屏抵扣**：抵扣依赖「本应用区间与学习区间重叠」，
+     * 而本应用区间一旦没被正常关闭就会把学习时长整个吞掉（见 [foregroundDurations] 注释）。
+     * 可靠性优先于防作弊。
+     */
+    private fun eventBasedDurations(
+        manager: UsageStatsManager,
+        sinceMs: Long,
+        untilMs: Long,
+    ): Map<String, Long> = try {
+        val events = ArrayList<UsageEvent>()
+        val usageEvents = manager.queryEvents(sinceMs, untilMs)
+        val event = UsageEvents.Event()
+        // UsageEvents 自身继承 Iterator，没有 hasNext()；getNextEvent 返回 false 即取完。
+        while (usageEvents.getNextEvent(event)) {
+            val type = when (event.eventType) {
+                EVENT_RESUMED -> UsageEventType.FOREGROUND
+                EVENT_PAUSED, EVENT_STOPPED -> UsageEventType.BACKGROUND
+                else -> null
+            } ?: continue
+            val pkg = event.packageName ?: continue
+            events += UsageEvent(pkg, type, event.timeStamp)
+        }
+        toUsageIntervals(events, untilMs)
+            .filterNot { it.packageName in ownPackages }
+            .groupBy { it.packageName }
+            .mapValues { (_, intervals) -> intervals.sumOf { it.durationMs } }
+    } catch (exception: SecurityException) {
+        emptyMap()
+    } catch (exception: RuntimeException) {
+        // 个别 ROM 的 queryEvents 会抛 IllegalStateException 等运行时异常，
+        // 授权状态与事件库都可能不一致；结算失败最多是奖励晚点到账，不该崩。
+        emptyMap()
     }
 
     override fun launchableApps(): List<InstalledApp> {
@@ -126,5 +191,8 @@ class AndroidDailyQuotaUsageReader(context: Context) : DailyQuotaUsageReader {
         private const val EVENT_RESUMED = 1
         private const val EVENT_PAUSED = 2
         private const val EVENT_STOPPED = 23
+
+        /** 授权兜底探测的窗口：7 天内只要有任意一次使用记录，就认为权限可用。 */
+        private const val PROBE_WINDOW_MS = 7L * 24 * 60 * 60 * 1000
     }
 }
